@@ -37,6 +37,17 @@ MenuMaker helps a family plan next week's dinner menu, answering "What should I 
   - `postgres` — PostgreSQL with a named volume for data persistence
   - Designed to be deployable via openmediavault's Docker/Compose UI on the Pi.
 
+## Local Development Auth
+
+Google OAuth requires a registered redirect URI and real credentials, which is friction for local dev. Auth.js supports multiple providers simultaneously, so both are configured:
+
+- **Google provider** — always available. Put real Google OAuth credentials in `.env.local` to test the actual Google sign-in flow locally when needed.
+- **Credentials provider ("dev login")** — only added to the provider list when `ENABLE_MOCK_AUTH=true`. Lets a developer type any name/email to sign in instantly (creating/reusing a `User` row), skipping the Google round-trip entirely. Uses the same session/JWT mechanism as Google, so the rest of the app is provider-agnostic.
+- **Safety guard**: app throws a startup error if `ENABLE_MOCK_AUTH=true` while `NODE_ENV=production`, preventing the bypass from ever reaching the Pi deployment.
+- `.env.example` sets `ENABLE_MOCK_AUTH=true` for local dev convenience; the production `docker-compose.yml` does not set it.
+
+This lets local development run with zero Google setup by default, while still allowing the real Google flow to be exercised locally on demand.
+
 ## Data Model
 
 - **Household**: `id`, `name`, `inviteCode`
