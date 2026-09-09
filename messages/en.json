@@ -37,5 +37,21 @@
     "cancel": "Cancel",
     "allTags": "All tags",
     "noMeals": "No meals yet. Add your first meal to get started."
+  },
+  "Plan": {
+    "title": "Weekly Plan",
+    "generateWeek": "Generate week",
+    "noMealsYet": "Add some meals first before generating a plan.",
+    "notEnoughMealsWarning": "You only have {count} meals available for 7 days — some days will repeat.",
+    "noMealAssigned": "No meal assigned",
+    "statusCooked": "Cooked",
+    "statusSkipped": "Skipped",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
   }
 }

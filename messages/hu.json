@@ -37,5 +37,21 @@
     "cancel": "Mégse",
     "allTags": "Minden címke",
     "noMeals": "Még nincs étel. Adj hozzá egyet a kezdéshez."
+  },
+  "Plan": {
+    "title": "Heti menü",
+    "generateWeek": "Hét generálása",
+    "noMealsYet": "Adj hozzá ételeket, mielőtt menüt generálnál.",
+    "notEnoughMealsWarning": "Csak {count} étel áll rendelkezésre 7 napra — néhány nap ismétlődni fog.",
+    "noMealAssigned": "Nincs étel hozzárendelve",
+    "statusCooked": "Elkészült",
+    "statusSkipped": "Kihagyva",
+    "monday": "Hétfő",
+    "tuesday": "Kedd",
+    "wednesday": "Szerda",
+    "thursday": "Csütörtök",
+    "friday": "Péntek",
+    "saturday": "Szombat",
+    "sunday": "Vasárnap"
   }
 }
