@@ -91,4 +91,23 @@ describe('generateWeeklyPlan', () => {
     const second = generateWeeklyPlan({ meals, cookedHistory: [], weekDateKeys: week });
     expect(first.assignments).toEqual(second.assignments);
   });
+
+  it('keeps both a healthy and a fast-to-make meal when both must be swapped in via fallback slots', () => {
+    // 7 never-cooked filler meals fully cover the week with no repeats, so
+    // the only way healthy/fast-to-make land in the week is via the
+    // BALANCE_TAGS fallback-index swap path (no duplicate slot exists).
+    const fillers = Array.from({ length: 7 }, (_, i) => meal(`filler${i}`));
+    const healthyMeal = meal('healthyMeal', ['healthy']);
+    const fastMeal = meal('fastMeal', ['fast to make']);
+    const meals = [...fillers, healthyMeal, fastMeal];
+    const cookedHistory = [
+      { mealId: 'healthyMeal', dateKey: '2026-09-01' },
+      { mealId: 'fastMeal', dateKey: '2026-09-01' },
+    ];
+    const result = generateWeeklyPlan({ meals, cookedHistory, weekDateKeys: week });
+    const assignedTags = result.assignments.map((a) => meals.find((m) => m.id === a.mealId)?.tags ?? []);
+    expect(assignedTags.some((tags) => tags.includes('healthy'))).toBe(true);
+    expect(assignedTags.some((tags) => tags.includes('fast to make'))).toBe(true);
+    expect(result.notEnoughMeals).toBe(false);
+  });
 });
