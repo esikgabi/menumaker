@@ -41,6 +41,8 @@
   "Plan": {
     "title": "Weekly Plan",
     "generateWeek": "Generate week",
+  "generatingWeek": "Generating…",
+  "overrideError": "Could not update this day. Please try again.",
     "noMealsYet": "Add some meals first before generating a plan.",
     "notEnoughMealsWarning": "You only have {count} meals available for 7 days — some days will repeat.",
     "noMealAssigned": "No meal assigned",

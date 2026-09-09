@@ -1,5 +1,7 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Select,
@@ -30,13 +32,30 @@ export function PlanView({
   mealCount: number;
 }) {
   const t = useTranslations('Plan');
+  const router = useRouter();
+  const [isGenerating, startGenerating] = useTransition();
+  const [errorDateKey, setErrorDateKey] = useState<string | null>(null);
+
+  async function handleOverride(dateKey: string, mealId: string) {
+    setErrorDateKey(null);
+    try {
+      await overrideDayAction(dateKey, mealId);
+      router.refresh();
+    } catch {
+      setErrorDateKey(dateKey);
+      router.refresh();
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <Button disabled={!hasMeals} onClick={() => generateWeekAction()}>
-          {t('generateWeek')}
+        <Button
+          disabled={!hasMeals || isGenerating}
+          onClick={() => startGenerating(async () => { await generateWeekAction(); router.refresh(); })}
+        >
+          {isGenerating ? t('generatingWeek') : t('generateWeek')}
         </Button>
       </div>
 
@@ -62,7 +81,7 @@ export function PlanView({
               {day.status === 'planned' ? (
                 <Select
                   value={day.mealId ?? undefined}
-                  onValueChange={(mealId) => overrideDayAction(day.dateKey, mealId)}
+                  onValueChange={(mealId) => handleOverride(day.dateKey, mealId)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t('noMealAssigned')} />
@@ -77,6 +96,9 @@ export function PlanView({
                 </Select>
               ) : (
                 <p className="font-medium">{day.mealName ?? t('noMealAssigned')}</p>
+              )}
+              {errorDateKey === day.dateKey && (
+                <p className="text-sm text-destructive">{t('overrideError')}</p>
               )}
               <div className="flex gap-1">
                 {day.tags.map((tag) => (
