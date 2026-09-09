@@ -77,6 +77,7 @@ export function generateWeeklyPlan(input: {
   // Second pass: tag balance. Swap in a tagged candidate for the first day
   // that holds a *repeated* meal, preferring not to disturb days whose meal
   // is uniquely assigned that week.
+  const usedSwapIndices = new Set<number>();
   for (const requiredTag of BALANCE_TAGS) {
     const alreadyPresent = assignedMealIds.some((id) => meals.find((m) => m.id === id)?.tags.includes(requiredTag));
     if (alreadyPresent) continue;
@@ -85,10 +86,12 @@ export function generateWeeklyPlan(input: {
     if (!candidate) continue; // household has no meal with this tag at all
 
     const duplicateIndex = assignedMealIds.findIndex(
-      (id, idx) => assignedMealIds.indexOf(id) !== idx,
+      (id, idx) => assignedMealIds.indexOf(id) !== idx && !usedSwapIndices.has(idx),
     );
-    const swapIndex = duplicateIndex !== -1 ? duplicateIndex : 0;
+    const fallbackIndex = assignedMealIds.findIndex((_, idx) => !usedSwapIndices.has(idx));
+    const swapIndex = duplicateIndex !== -1 ? duplicateIndex : fallbackIndex !== -1 ? fallbackIndex : 0;
     assignedMealIds[swapIndex] = candidate.id;
+    usedSwapIndices.add(swapIndex);
   }
 
   return {
