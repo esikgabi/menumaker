@@ -1,3 +1,5 @@
+import { prisma } from '@/lib/prisma';
+
 export function toDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -98,4 +100,93 @@ export function generateWeeklyPlan(input: {
     assignments: weekDateKeys.map((dateKey, i) => ({ dateKey, mealId: assignedMealIds[i] })),
     notEnoughMeals,
   };
+}
+
+/** Transitions past `planned` entries to `cooked` (if a meal was assigned) or `skipped` (if not). */
+export async function transitionPastPlannedEntries(householdId: string) {
+  const todayKey = toDateKey(new Date());
+
+  await prisma.planEntry.updateMany({
+    where: { householdId, status: 'planned', date: { lt: new Date(todayKey) }, mealId: { not: null } },
+    data: { status: 'cooked' },
+  });
+
+  await prisma.planEntry.updateMany({
+    where: { householdId, status: 'planned', date: { lt: new Date(todayKey) }, mealId: null },
+    data: { status: 'skipped' },
+  });
+}
+
+/** Ensures a PlanEntry row exists for every date key in the week, then returns them with meal+tags included. */
+export async function getOrCreateWeekPlan(householdId: string, weekDateKeys: string[]) {
+  const existing = await prisma.planEntry.findMany({
+    where: { householdId, date: { in: weekDateKeys.map((k) => new Date(k)) } },
+  });
+  const existingKeys = new Set(existing.map((e) => toDateKey(e.date)));
+
+  const missingKeys = weekDateKeys.filter((k) => !existingKeys.has(k));
+  if (missingKeys.length > 0) {
+    await prisma.planEntry.createMany({
+      data: missingKeys.map((dateKey) => ({ householdId, date: new Date(dateKey), status: 'planned' })),
+    });
+  }
+
+  return prisma.planEntry.findMany({
+    where: { householdId, date: { in: weekDateKeys.map((k) => new Date(k)) } },
+    include: { meal: { include: { tags: { include: { tag: true } } } } },
+    orderBy: { date: 'asc' },
+  });
+}
+
+/** Regenerates suggestions for every day in the week that is not already `cooked` (immutable history). */
+export async function generateAndSaveWeeklyPlan(householdId: string, weekDateKeys: string[]) {
+  const meals = await prisma.meal.findMany({
+    where: { householdId },
+    include: { tags: { include: { tag: true } } },
+  });
+  const planMeals: PlanMeal[] = meals.map((m) => ({
+    id: m.id,
+    name: m.name,
+    tags: m.tags.map((mt) => mt.tag.name),
+  }));
+
+  const cookedEntries = await prisma.planEntry.findMany({
+    where: { householdId, status: 'cooked', mealId: { not: null } },
+  });
+  const cookedHistory: CookedHistoryEntry[] = cookedEntries.map((e) => ({
+    mealId: e.mealId!,
+    dateKey: toDateKey(e.date),
+  }));
+
+  const { assignments } = generateWeeklyPlan({ meals: planMeals, cookedHistory, weekDateKeys });
+
+  await getOrCreateWeekPlan(householdId, weekDateKeys); // ensure rows exist first
+
+  const editableEntries = await prisma.planEntry.findMany({
+    where: { householdId, date: { in: weekDateKeys.map((k) => new Date(k)) }, status: { not: 'cooked' } },
+  });
+  const editableKeys = new Set(editableEntries.map((e) => toDateKey(e.date)));
+
+  await Promise.all(
+    assignments
+      .filter((a) => editableKeys.has(a.dateKey))
+      .map((a) =>
+        prisma.planEntry.updateMany({
+          where: { householdId, date: new Date(a.dateKey) },
+          data: { mealId: a.mealId, status: 'planned' },
+        }),
+      ),
+  );
+}
+
+/** Per-day manual override, scoped to the caller's household. */
+export async function setPlanEntryMeal(householdId: string, dateKey: string, mealId: string) {
+  const meal = await prisma.meal.findFirst({ where: { id: mealId, householdId } });
+  if (!meal) return null;
+
+  return prisma.planEntry.upsert({
+    where: { householdId_date: { householdId, date: new Date(dateKey) } },
+    update: { mealId, status: 'planned' },
+    create: { householdId, date: new Date(dateKey), mealId, status: 'planned' },
+  });
 }
