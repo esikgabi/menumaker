@@ -128,6 +128,7 @@ export async function getOrCreateWeekPlan(householdId: string, weekDateKeys: str
   if (missingKeys.length > 0) {
     await prisma.planEntry.createMany({
       data: missingKeys.map((dateKey) => ({ householdId, date: new Date(dateKey), status: 'planned' })),
+      skipDuplicates: true, // concurrent calls for a brand-new week can race; skip rows created by the other call
     });
   }
 
@@ -172,7 +173,7 @@ export async function generateAndSaveWeeklyPlan(householdId: string, weekDateKey
       .filter((a) => editableKeys.has(a.dateKey))
       .map((a) =>
         prisma.planEntry.updateMany({
-          where: { householdId, date: new Date(a.dateKey) },
+          where: { householdId, date: new Date(a.dateKey), status: { not: 'cooked' } },
           data: { mealId: a.mealId, status: 'planned' },
         }),
       ),
@@ -183,6 +184,11 @@ export async function generateAndSaveWeeklyPlan(householdId: string, weekDateKey
 export async function setPlanEntryMeal(householdId: string, dateKey: string, mealId: string) {
   const meal = await prisma.meal.findFirst({ where: { id: mealId, householdId } });
   if (!meal) return null;
+
+  const existing = await prisma.planEntry.findUnique({
+    where: { householdId_date: { householdId, date: new Date(dateKey) } },
+  });
+  if (existing?.status === 'cooked') return null; // never silently un-cook immutable history
 
   return prisma.planEntry.upsert({
     where: { householdId_date: { householdId, date: new Date(dateKey) } },
