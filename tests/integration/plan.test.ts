@@ -53,6 +53,19 @@ describe('getOrCreateWeekPlan', () => {
     const second = await getOrCreateWeekPlan(household.id, week);
     expect(second).toHaveLength(7); // no duplicates created
   });
+
+  it('handles concurrent calls for a brand-new week without throwing', async () => {
+    const { household } = await makeHouseholdWithMeals('L', []);
+    const week = getWeekDateKeys(new Date());
+
+    const [first, second] = await Promise.all([
+      getOrCreateWeekPlan(household.id, week),
+      getOrCreateWeekPlan(household.id, week),
+    ]);
+
+    expect(first).toHaveLength(7);
+    expect(second).toHaveLength(7);
+  });
 });
 
 describe('generateAndSaveWeeklyPlan', () => {
@@ -110,6 +123,26 @@ describe('setPlanEntryMeal', () => {
     const result = await setPlanEntryMeal(household.id, week[0], otherMeals[0].id);
 
     expect(result).toBeNull();
+  });
+
+  it('rejects an override on a day already marked cooked', async () => {
+    const { household, meals } = await makeHouseholdWithMeals('K', ['Meal 1', 'Meal 2']);
+    const week = getWeekDateKeys(new Date());
+    await getOrCreateWeekPlan(household.id, week);
+
+    await prisma.planEntry.update({
+      where: { householdId_date: { householdId: household.id, date: new Date(week[0]) } },
+      data: { status: 'cooked', mealId: meals[0].id },
+    });
+
+    const result = await setPlanEntryMeal(household.id, week[0], meals[1].id);
+
+    expect(result).toBeNull();
+    const entry = await prisma.planEntry.findUnique({
+      where: { householdId_date: { householdId: household.id, date: new Date(week[0]) } },
+    });
+    expect(entry?.status).toBe('cooked');
+    expect(entry?.mealId).toBe(meals[0].id);
   });
 });
 
