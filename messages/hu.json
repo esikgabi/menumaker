@@ -1,0 +1,26 @@
+{
+  "Nav": {
+    "plan": "Heti menü",
+    "meals": "Ételek",
+    "history": "Előzmények",
+    "settings": "Háztartás beállításai"
+  },
+  "SignIn": {
+    "title": "Bejelentkezés a MenuMakerbe",
+    "googleButton": "Bejelentkezés Google-fiókkal",
+    "devLoginLabel": "Fejlesztői bejelentkezés (csak helyi használatra)",
+    "nameLabel": "Név",
+    "emailLabel": "E-mail",
+    "continueButton": "Tovább"
+  },
+  "Onboarding": {
+    "title": "Üdvözlünk a MenuMakerben",
+    "createTitle": "Háztartás létrehozása",
+    "createNameLabel": "Háztartás neve",
+    "createButton": "Háztartás létrehozása",
+    "joinTitle": "Csatlakozás meghívókóddal",
+    "joinCodeLabel": "Meghívókód",
+    "joinButton": "Csatlakozás a háztartáshoz",
+    "invalidCode": "Ez a meghívókód érvénytelen vagy lejárt. Kérj újat egy háztartástagtól."
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "Nav": {
+    "plan": "Weekly Plan",
+    "meals": "Meals",
+    "history": "History",
+    "settings": "Settings"
+  },
+  "SignIn": {
+    "title": "Sign in to MenuMaker",
+    "googleButton": "Sign in with Google",
+    "devLoginLabel": "Dev login (local only)",
+    "nameLabel": "Name",
+    "emailLabel": "Email",
+    "continueButton": "Continue"
+  },
+  "Onboarding": {
+    "title": "Welcome to MenuMaker",
+    "createTitle": "Create a household",
+    "createNameLabel": "Household name",
+    "createButton": "Create household",
+    "joinTitle": "Join with invite code",
+    "joinCodeLabel": "Invite code",
+    "joinButton": "Join household",
+    "invalidCode": "That invite code is invalid or expired. Ask a household member for a new one."
+  }
+}
