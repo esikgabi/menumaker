@@ -196,3 +196,24 @@ export async function setPlanEntryMeal(householdId: string, dateKey: string, mea
     create: { householdId, date: new Date(dateKey), mealId, status: 'planned' },
   });
 }
+
+/** Returns cooked PlanEntry rows for a household, grouped by Monday-start week, most recent week first. */
+export async function listCookedHistory(householdId: string) {
+  const entries = await prisma.planEntry.findMany({
+    where: { householdId, status: 'cooked' },
+    include: { meal: { include: { tags: { include: { tag: true } } } } },
+    orderBy: { date: 'desc' },
+  });
+
+  const weekMap = new Map<string, typeof entries>();
+  for (const entry of entries) {
+    const weekStartKey = getWeekDateKeys(entry.date)[0];
+    const existing = weekMap.get(weekStartKey);
+    if (existing) existing.push(entry);
+    else weekMap.set(weekStartKey, [entry]);
+  }
+
+  return [...weekMap.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([weekStartKey, weekEntries]) => ({ weekStartKey, entries: weekEntries }));
+}
