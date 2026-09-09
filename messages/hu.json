@@ -41,8 +41,8 @@
   "Plan": {
     "title": "Heti menü",
     "generateWeek": "Hét generálása",
-  "generatingWeek": "Generálás…",
-  "overrideError": "Ezt a napot nem sikerült frissíteni. Próbáld újra.",
+    "generatingWeek": "Generálás…",
+    "overrideError": "Ezt a napot nem sikerült frissíteni. Próbáld újra.",
     "noMealsYet": "Adj hozzá ételeket, mielőtt menüt generálnál.",
     "notEnoughMealsWarning": "Csak {count} étel áll rendelkezésre 7 napra — néhány nap ismétlődni fog.",
     "noMealAssigned": "Nincs étel hozzárendelve",
