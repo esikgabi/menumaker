@@ -45,6 +45,22 @@ describe('meal CRUD and household isolation', () => {
     expect(meal.tags[0].tag.name).toBe('healthy');
   });
 
+  it('does not attach a tag belonging to a different household', async () => {
+    const householdA = await makeHousehold('I');
+    const foreignTag = await createTag(householdA.id, 'foreign');
+
+    const householdB = await makeHousehold('J');
+    const ownerB = (await prisma.user.findFirst({ where: { householdId: householdB.id } }))!;
+
+    const meal = await createMeal(householdB.id, ownerB.id, {
+      name: 'Cross Household Meal',
+      note: '',
+      tagIds: [foreignTag!.id],
+    });
+
+    expect(meal.tags).toHaveLength(0);
+  });
+
   it('does not return meals from another household', async () => {
     const householdA = await makeHousehold('B');
     const ownerA = (await prisma.user.findFirst({ where: { householdId: householdA.id } }))!;

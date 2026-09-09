@@ -24,14 +24,24 @@ export async function listTags(householdId: string) {
   return prisma.tag.findMany({ where: { householdId }, orderBy: { name: 'asc' } });
 }
 
+async function ownedTagIds(householdId: string, tagIds: string[]): Promise<string[]> {
+  if (tagIds.length === 0) return [];
+  const owned = await prisma.tag.findMany({
+    where: { id: { in: tagIds }, householdId },
+    select: { id: true },
+  });
+  return owned.map((t) => t.id);
+}
+
 export async function createMeal(householdId: string, createdById: string, input: MealInput) {
+  const tagIds = await ownedTagIds(householdId, input.tagIds);
   return prisma.meal.create({
     data: {
       householdId,
       createdById,
       name: input.name,
       note: input.note || null,
-      tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
+      tags: { create: tagIds.map((tagId) => ({ tagId })) },
     },
     include: { tags: { include: { tag: true } } },
   });
@@ -47,12 +57,14 @@ export async function updateMeal(householdId: string, mealId: string, input: Mea
 
   await prisma.mealTag.deleteMany({ where: { mealId } });
 
+  const tagIds = await ownedTagIds(householdId, input.tagIds);
+
   return prisma.meal.update({
     where: { id: mealId },
     data: {
       name: input.name,
       note: input.note || null,
-      tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
+      tags: { create: tagIds.map((tagId) => ({ tagId })) },
     },
     include: { tags: { include: { tag: true } } },
   });
