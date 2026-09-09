@@ -60,5 +60,23 @@
     "title": "History",
     "weekOf": "Week of {date}",
     "noHistory": "No cooking history yet. Once a planned day passes, it will show up here."
+  },
+  "Settings": {
+    "title": "Household Settings",
+    "householdNameLabel": "Household name",
+    "save": "Save",
+    "inviteCodeLabel": "Invite code",
+    "inviteLinkLabel": "Invite link",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "membersTitle": "Members",
+    "tagsTitle": "Tags",
+    "newTagPlaceholder": "New tag name",
+    "addTag": "Add tag",
+    "rename": "Rename",
+    "delete": "Delete",
+    "leaveHousehold": "Leave household",
+    "leaveConfirm": "Are you sure you want to leave this household? If you're the last member, all its meals and history will be deleted.",
+    "signOut": "Sign out"
   }
 }
