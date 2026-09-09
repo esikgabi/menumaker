@@ -12,6 +12,7 @@ export function OnboardingForm() {
   const t = useTranslations('Onboarding');
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
+  const prefilledCode = searchParams.get('code') ?? '';
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6 pt-12">
@@ -39,7 +40,7 @@ export function OnboardingForm() {
         <CardContent>
           <form action={joinHouseholdAction} className="flex flex-col gap-3">
             <Label htmlFor="inviteCode">{t('joinCodeLabel')}</Label>
-            <Input id="inviteCode" name="inviteCode" required />
+            <Input id="inviteCode" name="inviteCode" defaultValue={prefilledCode} required />
             <Button type="submit" variant="secondary">
               {t('joinButton')}
             </Button>
