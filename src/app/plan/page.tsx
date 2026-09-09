@@ -1,6 +1,6 @@
 import { requireHousehold } from '@/lib/session';
 import { listMeals } from '@/lib/meal';
-import { getWeekDateKeys, getOrCreateWeekPlan, transitionPastPlannedEntries } from '@/lib/plan';
+import { getWeekDateKeys, getOrCreateWeekPlan, transitionPastPlannedEntries, toDateKey } from '@/lib/plan';
 import { getTranslations } from 'next-intl/server';
 import { PlanView } from './plan-view';
 
@@ -19,7 +19,7 @@ export default async function PlanPage() {
     listMeals(householdId),
   ]);
 
-  const entryByDateKey = new Map(entries.map((e) => [e.date.toISOString().slice(0, 10), e]));
+  const entryByDateKey = new Map(entries.map((e) => [toDateKey(e.date), e]));
 
   const days = week.map((dateKey, i) => {
     const entry = entryByDateKey.get(dateKey);
