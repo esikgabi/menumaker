@@ -55,5 +55,10 @@
     "friday": "Péntek",
     "saturday": "Szombat",
     "sunday": "Vasárnap"
+  },
+  "History": {
+    "title": "Előzmények",
+    "weekOf": "{date} hete",
+    "noHistory": "Még nincs előzmény. Amint egy tervezett nap eltelik, itt fog megjelenni."
   }
 }

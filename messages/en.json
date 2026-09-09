@@ -55,5 +55,10 @@
     "friday": "Friday",
     "saturday": "Saturday",
     "sunday": "Sunday"
+  },
+  "History": {
+    "title": "History",
+    "weekOf": "Week of {date}",
+    "noHistory": "No cooking history yet. Once a planned day passes, it will show up here."
   }
 }
