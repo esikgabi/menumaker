@@ -34,3 +34,60 @@ MenuMaker
 - **`npm run build` will fail while those two flags are set** — it's the production safety guard doing its job (the app refuses to start with mock auth enabled when `NODE_ENV=production`, and `next build` sets that). Unset both flags in `.env.local` before running a local production build; leave them set for day-to-day `npm run dev` work.
 - Real Google sign-in requires `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` in `.env.local`; without them the Google button will error, but dev-login still works.
 
+## Deployment (Raspberry Pi 5 / openmediavault)
+
+MenuMaker runs as two Docker containers defined in `docker-compose.yml`: `app` (the Next.js server) and `postgres` (PostgreSQL 16 with a named volume for persistence).
+
+### 1. Create a Google OAuth client
+
+1. In the [Google Cloud Console](https://console.cloud.google.com/), create (or reuse) a project, then go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**.
+2. Application type: **Web application**.
+3. Authorized redirect URI: `https://<your-domain-or-pi-ip>/api/auth/callback/google`.
+4. Copy the generated **Client ID** and **Client Secret** — these become `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` below.
+
+### 2. Prepare environment variables
+
+Copy `.env.example` to `.env` in the directory containing `docker-compose.yml` on the Pi, and set:
+
+| Variable | Value |
+|---|---|
+| `POSTGRES_PASSWORD` | a strong random password (e.g. `openssl rand -base64 24`) |
+| `NEXTAUTH_URL` | the public URL MenuMaker will be reachable at, e.g. `https://menumaker.example.com` or `http://<pi-lan-ip>:3000` |
+| `NEXTAUTH_SECRET` | a random secret, generate with `openssl rand -base64 32` |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | from step 1 |
+
+Do **not** set `ENABLE_MOCK_AUTH` or `NEXT_PUBLIC_ENABLE_MOCK_AUTH` in this file — the app throws a startup error if `ENABLE_MOCK_AUTH=true` is combined with `NODE_ENV=production`, and `docker-compose.yml` already hardcodes `NODE_ENV=production` for the `app` service.
+
+### 3. Deploy via openmediavault's Compose UI
+
+1. In openmediavault, install the **Compose** plugin if not already present (Services → Compose).
+2. Create a new Compose project, pointing at (or pasting the contents of) this repo's `docker-compose.yml`, in the same directory as your `.env` file from step 2 (Compose automatically loads `.env` for variable substitution).
+3. Deploy the project ("Up"). On first start, `docker-entrypoint.sh` runs `prisma migrate deploy` against the `postgres` service before starting the Next.js server — no manual migration step is needed.
+4. Once running, visit `NEXTAUTH_URL` in a browser and sign in with Google to confirm the deployment works end-to-end.
+
+### 4. Updating to a new version
+
+```bash
+git pull
+docker compose build app
+docker compose up -d
+```
+
+The entrypoint re-runs `prisma migrate deploy` on every restart, applying any new migrations automatically; already-applied migrations are no-ops.
+
+### 5. Backups
+
+The `postgres` service stores all data in the named volume `postgres_data`. To back it up:
+
+```bash
+docker compose exec postgres pg_dump -U menumaker menumaker > menumaker-backup-$(date +%F).sql
+```
+
+To restore into a fresh volume:
+
+```bash
+docker compose exec -T postgres psql -U menumaker menumaker < menumaker-backup-2026-01-01.sql
+```
+
+Schedule the `pg_dump` command via openmediavault's built-in cron/scheduled-tasks UI for regular backups.
+
