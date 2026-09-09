@@ -116,7 +116,7 @@ export function SettingsView({
             {members.map((member) => (
               <li key={member.id} className="text-sm">
                 {member.name ?? member.email}
-                {member.id === currentUserId ? ' (you)' : ''}
+                {member.id === currentUserId ? ` ${t('you')}` : ''}
               </li>
             ))}
           </ul>
