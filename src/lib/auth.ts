@@ -17,6 +17,17 @@ const providers: NextAuthOptions['providers'] = [
   }),
 ];
 
+export async function upsertDevUser(input: { email: string; name?: string | null }) {
+  return prisma.user.upsert({
+    where: { email: input.email },
+    update: { name: input.name || undefined },
+    create: {
+      email: input.email,
+      name: input.name || input.email,
+    },
+  });
+}
+
 if (process.env.ENABLE_MOCK_AUTH === 'true') {
   providers.push(
     CredentialsProvider({
@@ -28,16 +39,7 @@ if (process.env.ENABLE_MOCK_AUTH === 'true') {
       },
       async authorize(credentials) {
         if (!credentials?.email) return null;
-
-        const user = await prisma.user.upsert({
-          where: { email: credentials.email },
-          update: { name: credentials.name || undefined },
-          create: {
-            email: credentials.email,
-            name: credentials.name || credentials.email,
-          },
-        });
-
+        const user = await upsertDevUser({ email: credentials.email, name: credentials.name });
         return { id: user.id, email: user.email, name: user.name };
       },
     }),

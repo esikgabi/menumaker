@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test:unit": "vitest run tests/unit",
-    "test:unit:watch": "vitest tests/unit"
+    "test:unit:watch": "vitest tests/unit",
+    "test:integration": "docker compose -f docker-compose.test.yml up -d && sleep 2 && vitest run --config vitest.integration.config.ts; docker compose -f docker-compose.test.yml down"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
