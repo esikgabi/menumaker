@@ -22,5 +22,20 @@
     "joinCodeLabel": "Invite code",
     "joinButton": "Join household",
     "invalidCode": "That invite code is invalid or expired. Ask a household member for a new one."
+  },
+  "Meals": {
+    "title": "Meals",
+    "addMeal": "Add meal",
+    "editMeal": "Edit meal",
+    "nameLabel": "Name",
+    "noteLabel": "Note (optional)",
+    "tagsLabel": "Tags",
+    "newTagPlaceholder": "New tag name",
+    "addTag": "Add tag",
+    "save": "Save",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "allTags": "All tags",
+    "noMeals": "No meals yet. Add your first meal to get started."
   }
 }

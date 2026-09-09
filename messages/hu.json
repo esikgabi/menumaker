@@ -22,5 +22,20 @@
     "joinCodeLabel": "Meghívókód",
     "joinButton": "Csatlakozás a háztartáshoz",
     "invalidCode": "Ez a meghívókód érvénytelen vagy lejárt. Kérj újat egy háztartástagtól."
+  },
+  "Meals": {
+    "title": "Ételek",
+    "addMeal": "Étel hozzáadása",
+    "editMeal": "Étel szerkesztése",
+    "nameLabel": "Név",
+    "noteLabel": "Megjegyzés (opcionális)",
+    "tagsLabel": "Címkék",
+    "newTagPlaceholder": "Új címke neve",
+    "addTag": "Címke hozzáadása",
+    "save": "Mentés",
+    "delete": "Törlés",
+    "cancel": "Mégse",
+    "allTags": "Minden címke",
+    "noMeals": "Még nincs étel. Adj hozzá egyet a kezdéshez."
   }
 }
