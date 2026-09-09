@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { execSync } from 'child_process';
 import { prisma } from '@/lib/prisma';
 import { createHouseholdWithOwner } from '@/lib/household';
-import { createMeal, createTag, listMeals, updateMeal, deleteMeal } from '@/lib/meal';
+import { createMeal, createTag, listMeals, updateMeal, deleteMeal, renameTag, deleteTag } from '@/lib/meal';
 
 beforeAll(() => {
   execSync('npx prisma migrate deploy', { env: process.env, stdio: 'inherit' });
@@ -108,6 +108,50 @@ describe('meal CRUD and household isolation', () => {
     const householdB = await makeHousehold('H');
 
     const result = await deleteMeal(householdB.id, meal.id);
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('renameTag and deleteTag', () => {
+  it('renames a tag scoped to its household', async () => {
+    const household = await makeHousehold('I');
+    const tag = await createTag(household.id, 'old name');
+
+    const renamed = await renameTag(household.id, tag!.id, 'new name');
+
+    expect(renamed?.name).toBe('new name');
+  });
+
+  it('rejects renaming a tag from a different household', async () => {
+    const householdA = await makeHousehold('J');
+    const tag = await createTag(householdA.id, 'protected');
+    const householdB = await makeHousehold('K');
+
+    const result = await renameTag(householdB.id, tag!.id, 'hacked');
+
+    expect(result).toBeNull();
+  });
+
+  it('deletes a tag and its meal associations', async () => {
+    const household = await makeHousehold('L');
+    const owner = (await prisma.user.findFirst({ where: { householdId: household.id } }))!;
+    const tag = await createTag(household.id, 'deletable');
+    await createMeal(household.id, owner.id, { name: 'Tagged Meal', note: '', tagIds: [tag!.id] });
+
+    const result = await deleteTag(household.id, tag!.id);
+
+    expect(result).toBe(true);
+    const remaining = await prisma.tag.findUnique({ where: { id: tag!.id } });
+    expect(remaining).toBeNull();
+  });
+
+  it('rejects deleting a tag from a different household', async () => {
+    const householdA = await makeHousehold('M');
+    const tag = await createTag(householdA.id, 'protected2');
+    const householdB = await makeHousehold('N');
+
+    const result = await deleteTag(householdB.id, tag!.id);
 
     expect(result).toBeNull();
   });

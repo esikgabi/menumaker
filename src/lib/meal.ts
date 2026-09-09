@@ -88,3 +88,21 @@ export async function createTag(householdId: string, name: string) {
     create: { householdId, name: trimmed },
   });
 }
+
+export async function renameTag(householdId: string, tagId: string, name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+
+  const owned = await prisma.tag.findFirst({ where: { id: tagId, householdId } });
+  if (!owned) return null;
+
+  return prisma.tag.update({ where: { id: tagId }, data: { name: trimmed } });
+}
+
+export async function deleteTag(householdId: string, tagId: string) {
+  const owned = await prisma.tag.findFirst({ where: { id: tagId, householdId } });
+  if (!owned) return null;
+
+  await prisma.tag.delete({ where: { id: tagId } }); // MealTag rows cascade per Phase 1 schema
+  return true;
+}
