@@ -123,6 +123,16 @@ describe('renameTag and deleteTag', () => {
     expect(renamed?.name).toBe('new name');
   });
 
+  it('returns null when renaming a tag to a name that collides with another tag in the household', async () => {
+    const household = await makeHousehold('IB');
+    await createTag(household.id, 'existing name');
+    const tag = await createTag(household.id, 'old name');
+
+    const result = await renameTag(household.id, tag!.id, 'existing name');
+
+    expect(result).toBeNull();
+  });
+
   it('rejects renaming a tag from a different household', async () => {
     const householdA = await makeHousehold('J');
     const tag = await createTag(householdA.id, 'protected');

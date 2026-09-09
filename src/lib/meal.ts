@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 export const mealInputSchema = z.object({
@@ -96,7 +97,12 @@ export async function renameTag(householdId: string, tagId: string, name: string
   const owned = await prisma.tag.findFirst({ where: { id: tagId, householdId } });
   if (!owned) return null;
 
-  return prisma.tag.update({ where: { id: tagId }, data: { name: trimmed } });
+  try {
+    return await prisma.tag.update({ where: { id: tagId }, data: { name: trimmed } });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') return null;
+    throw err;
+  }
 }
 
 export async function deleteTag(householdId: string, tagId: string) {
