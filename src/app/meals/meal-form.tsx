@@ -42,8 +42,8 @@ export function MealForm({
     if (!newTagName.trim()) return;
     const tag = await createTagAction(newTagName.trim());
     if (tag) {
-      setTags((prev) => [...prev, tag]);
-      setSelectedTagIds((prev) => [...prev, tag.id]);
+      setTags((prev) => (prev.some((t) => t.id === tag.id) ? prev : [...prev, tag]));
+      setSelectedTagIds((prev) => (prev.includes(tag.id) ? prev : [...prev, tag.id]));
     }
     setNewTagName('');
   }
