@@ -60,5 +60,23 @@
     "title": "Előzmények",
     "weekOf": "{date} hete",
     "noHistory": "Még nincs előzmény. Amint egy tervezett nap eltelik, itt fog megjelenni."
+  },
+  "Settings": {
+    "title": "Háztartás beállításai",
+    "householdNameLabel": "Háztartás neve",
+    "save": "Mentés",
+    "inviteCodeLabel": "Meghívókód",
+    "inviteLinkLabel": "Meghívó link",
+    "copy": "Másolás",
+    "copied": "Másolva!",
+    "membersTitle": "Tagok",
+    "tagsTitle": "Címkék",
+    "newTagPlaceholder": "Új címke neve",
+    "addTag": "Címke hozzáadása",
+    "rename": "Átnevezés",
+    "delete": "Törlés",
+    "leaveHousehold": "Háztartás elhagyása",
+    "leaveConfirm": "Biztosan elhagyod ezt a háztartást? Ha te vagy az utolsó tag, minden étel és előzmény törlődik.",
+    "signOut": "Kijelentkezés"
   }
 }
