@@ -38,6 +38,11 @@ export async function joinHouseholdByInviteCode(inviteCode: string, userId: stri
 
 export const householdNameSchema = z.string().trim().min(1).max(100);
 
+// ponytail: renameHousehold and leaveHousehold below do not check the
+// household/user exists first; every real caller derives these ids from an
+// authenticated session (requireHousehold()) where they're already
+// guaranteed valid. Add an existence check if these are ever called with
+// unvalidated input.
 export async function renameHousehold(householdId: string, name: string) {
   return prisma.household.update({ where: { id: householdId }, data: { name } });
 }
@@ -60,6 +65,8 @@ export async function leaveHousehold(householdId: string, userId: string) {
 
   const remaining = await prisma.user.count({ where: { householdId } });
   if (remaining === 0) {
-    await prisma.household.delete({ where: { id: householdId } });
+    // deleteMany is idempotent (0 or 1 rows, never throws) which avoids a
+    // P2025 crash if two members leave concurrently and both see remaining===0.
+    await prisma.household.deleteMany({ where: { id: householdId } });
   }
 }
