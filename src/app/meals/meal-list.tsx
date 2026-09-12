@@ -16,41 +16,66 @@ import { deleteMealAction } from './actions';
 import { MealForm } from './meal-form';
 
 type Tag = { id: string; name: string };
-type Meal = { id: string; name: string; note: string | null; tags: Tag[] };
+type Meal = { id: string; name: string; note: string | null; category: 'soup' | 'main'; tags: Tag[] };
 
 export function MealList({
   meals,
   allTags,
   activeTag,
+  activeCategory,
 }: {
   meals: Meal[];
   allTags: Tag[];
   activeTag?: string;
+  activeCategory?: string;
 }) {
   const t = useTranslations('Meals');
   const router = useRouter();
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
+  function buildUrl(nextTag?: string, nextCategory?: string) {
+    const params = new URLSearchParams();
+    if (nextTag) params.set('tag', nextTag);
+    if (nextCategory) params.set('category', nextCategory);
+    const query = params.toString();
+    return query ? `/meals?${query}` : '/meals';
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
-        <Select
-          value={activeTag ?? 'all'}
-          onValueChange={(value) => router.push(value === 'all' ? '/meals' : `/meals?tag=${value}`)}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('allTags')}</SelectItem>
-            {allTags.map((tag) => (
-              <SelectItem key={tag.id} value={tag.id}>
-                {tag.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Select
+            value={activeTag ?? 'all'}
+            onValueChange={(value) => router.push(buildUrl(value === 'all' ? undefined : value, activeCategory))}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('allTags')}</SelectItem>
+              {allTags.map((tag) => (
+                <SelectItem key={tag.id} value={tag.id}>
+                  {tag.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={activeCategory ?? 'all'}
+            onValueChange={(value) => router.push(buildUrl(activeTag, value === 'all' ? undefined : value))}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('allCategories')}</SelectItem>
+              <SelectItem value="main">{t('categoryMain')}</SelectItem>
+              <SelectItem value="soup">{t('categorySoup')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Button onClick={() => setIsAdding(true)}>{t('addMeal')}</Button>
       </div>
 
@@ -63,6 +88,7 @@ export function MealList({
               <p className="font-medium">{meal.name}</p>
               {meal.note && <p className="text-sm text-muted-foreground">{meal.note}</p>}
               <div className="mt-1 flex gap-1">
+                <Badge variant="default">{meal.category === 'soup' ? t('categorySoup') : t('categoryMain')}</Badge>
                 {meal.tags.map((tag) => (
                   <Badge key={tag.id} variant="secondary">
                     {tag.name}
