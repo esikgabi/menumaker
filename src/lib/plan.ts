@@ -19,6 +19,19 @@ export function getWeekDateKeys(reference: Date): string[] {
   });
 }
 
+/**
+ * Returns the date keys of `getWeekDateKeys(reference)` that are `>= today`
+ * — i.e. the current Mon-Sun week, restricted to today onward. `today`
+ * defaults to `reference` (production call sites always pass `new Date()`
+ * for both, since "the week" and "today" are the same instant); the
+ * separate parameter exists so tests can pin the week and the cutoff
+ * independently.
+ */
+export function getFutureWeekDateKeys(reference: Date, today: Date = reference): string[] {
+  const todayKey = toDateKey(today);
+  return getWeekDateKeys(reference).filter((k) => k >= todayKey);
+}
+
 export type PlanMeal = { id: string; name: string; tags: string[] };
 export type CookedHistoryEntry = { mealId: string; dateKey: string };
 
