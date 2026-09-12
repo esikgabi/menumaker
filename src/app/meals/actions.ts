@@ -9,6 +9,7 @@ function parseMealForm(formData: FormData) {
     name: formData.get('name'),
     note: formData.get('note') ?? '',
     tagIds: formData.getAll('tagIds').map(String),
+    category: formData.get('category'),
   });
 }
 

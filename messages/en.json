@@ -36,7 +36,11 @@
     "delete": "Delete",
     "cancel": "Cancel",
     "allTags": "All tags",
-    "noMeals": "No meals yet. Add your first meal to get started."
+    "noMeals": "No meals yet. Add your first meal to get started.",
+    "categoryLabel": "Category",
+    "categorySoup": "Soup",
+    "categoryMain": "Main",
+    "allCategories": "All categories"
   },
   "Plan": {
     "title": "Weekly Plan",
