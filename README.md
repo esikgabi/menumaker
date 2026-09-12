@@ -1,5 +1,26 @@
 # menumaker
-MenuMaker
+MenuMaker helps a household decide what to cook next. It tracks meals and tags
+(child favourite, healthy, fast to make, ...), records cooking history, and
+generates a weekly meal plan that avoids recent repeats and balances tags.
+
+## Features
+
+- **Google sign-in** (Auth.js/NextAuth v4), no passwords stored.
+- **Households**: create one or join via invite code; meals/tags/plans are
+  scoped per household.
+- **Weekly plan**: generates a plan for today through the end of the current
+  week, with independent Main and Soup slots per day. Main uses the
+  recency-avoidance + tag-balancing algorithm; Soup uses recency-avoidance
+  only (scoped to soup-category meals) and can be left empty ("None").
+  Swap either slot from a dropdown; past days auto-transition to
+  "cooked"/"skipped" independently per slot.
+- **Meals & tags**: CRUD for meals, tag them, categorize each as Soup or
+  Main, filter by tag or category.
+- **History**: read-only view of past cooked/skipped meals, grouped by week.
+- **Household settings**: rename household, invite-link/code, member list,
+  leave household, rename/delete tags, sign out.
+- **i18n**: English and Hungarian (`next-intl`), locale follows the signed-in
+  user, a cookie, or the browser's `Accept-Language`.
 
 ## Development
 
@@ -26,6 +47,14 @@ MenuMaker
 6. Run integration tests (spins up a throwaway Postgres via Docker):
    ```bash
    npm run test:integration
+   ```
+7. Run end-to-end tests (starts the dev server automatically):
+   ```bash
+   npm run test:e2e
+   ```
+8. Lint:
+   ```bash
+   npm run lint
    ```
 
 ### Auth notes
