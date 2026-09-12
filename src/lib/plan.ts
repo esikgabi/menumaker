@@ -130,17 +130,26 @@ export async function transitionPastPlannedEntries(householdId: string) {
   });
 }
 
-/** Ensures a PlanEntry row exists for every date key in the week, then returns them with meal+tags included. */
+const MEAL_CATEGORIES = ['main', 'soup'] as const;
+
+/** Ensures a main and soup PlanEntry row exists for every date key in the week, then returns them with meal+tags included. */
 export async function getOrCreateWeekPlan(householdId: string, weekDateKeys: string[]) {
   const existing = await prisma.planEntry.findMany({
     where: { householdId, date: { in: weekDateKeys.map((k) => new Date(k)) } },
   });
-  const existingKeys = new Set(existing.map((e) => toDateKey(e.date)));
+  const existingKeys = new Set(existing.map((e) => `${toDateKey(e.date)}:${e.category}`));
 
-  const missingKeys = weekDateKeys.filter((k) => !existingKeys.has(k));
-  if (missingKeys.length > 0) {
+  const missing = weekDateKeys.flatMap((dateKey) =>
+    MEAL_CATEGORIES.filter((category) => !existingKeys.has(`${dateKey}:${category}`)).map((category) => ({
+      householdId,
+      date: new Date(dateKey),
+      category,
+      status: 'planned' as const,
+    })),
+  );
+  if (missing.length > 0) {
     await prisma.planEntry.createMany({
-      data: missingKeys.map((dateKey) => ({ householdId, date: new Date(dateKey), status: 'planned' })),
+      data: missing,
       skipDuplicates: true, // concurrent calls for a brand-new week can race; skip rows created by the other call
     });
   }
@@ -148,65 +157,79 @@ export async function getOrCreateWeekPlan(householdId: string, weekDateKeys: str
   return prisma.planEntry.findMany({
     where: { householdId, date: { in: weekDateKeys.map((k) => new Date(k)) } },
     include: { meal: { include: { tags: { include: { tag: true } } } } },
-    orderBy: { date: 'asc' },
+    orderBy: [{ date: 'asc' }, { category: 'asc' }],
   });
 }
 
-/** Regenerates suggestions for every day in the week that is not already `cooked` (immutable history). */
+/** Regenerates suggestions for every day in the week that is not already `cooked` (immutable history), for both categories independently. */
 export async function generateAndSaveWeeklyPlan(householdId: string, weekDateKeys: string[]) {
   const meals = await prisma.meal.findMany({
     where: { householdId },
     include: { tags: { include: { tag: true } } },
   });
-  const planMeals: PlanMeal[] = meals.map((m) => ({
-    id: m.id,
-    name: m.name,
-    tags: m.tags.map((mt) => mt.tag.name),
-  }));
 
   const cookedEntries = await prisma.planEntry.findMany({
     where: { householdId, status: 'cooked', mealId: { not: null } },
+    include: { meal: true },
   });
-  const cookedHistory: CookedHistoryEntry[] = cookedEntries.map((e) => ({
-    mealId: e.mealId!,
-    dateKey: toDateKey(e.date),
-  }));
-
-  const { assignments } = generateWeeklyPlan({ meals: planMeals, cookedHistory, weekDateKeys });
 
   await getOrCreateWeekPlan(householdId, weekDateKeys); // ensure rows exist first
 
   const editableEntries = await prisma.planEntry.findMany({
     where: { householdId, date: { in: weekDateKeys.map((k) => new Date(k)) }, status: { not: 'cooked' } },
   });
-  const editableKeys = new Set(editableEntries.map((e) => toDateKey(e.date)));
+  const editableKeys = new Set(editableEntries.map((e) => `${toDateKey(e.date)}:${e.category}`));
+
+  const updates = MEAL_CATEGORIES.flatMap((category) => {
+    const categoryMeals: PlanMeal[] = meals
+      .filter((m) => m.category === category)
+      .map((m) => ({ id: m.id, name: m.name, tags: m.tags.map((mt) => mt.tag.name) }));
+    const categoryCookedHistory: CookedHistoryEntry[] = cookedEntries
+      .filter((e) => e.meal?.category === category)
+      .map((e) => ({ mealId: e.mealId!, dateKey: toDateKey(e.date) }));
+
+    const { assignments } = generateWeeklyPlan({
+      meals: categoryMeals,
+      cookedHistory: categoryCookedHistory,
+      weekDateKeys,
+    });
+
+    return assignments
+      .filter((a) => editableKeys.has(`${a.dateKey}:${category}`))
+      .map((a) => ({ dateKey: a.dateKey, category, mealId: a.mealId }));
+  });
 
   await Promise.all(
-    assignments
-      .filter((a) => editableKeys.has(a.dateKey))
-      .map((a) =>
-        prisma.planEntry.updateMany({
-          where: { householdId, date: new Date(a.dateKey), status: { not: 'cooked' } },
-          data: { mealId: a.mealId, status: 'planned' },
-        }),
-      ),
+    updates.map((u) =>
+      prisma.planEntry.updateMany({
+        where: { householdId, date: new Date(u.dateKey), category: u.category, status: { not: 'cooked' } },
+        data: { mealId: u.mealId, status: 'planned' },
+      }),
+    ),
   );
 }
 
-/** Per-day manual override, scoped to the caller's household. */
-export async function setPlanEntryMeal(householdId: string, dateKey: string, mealId: string) {
-  const meal = await prisma.meal.findFirst({ where: { id: mealId, householdId } });
-  if (!meal) return null;
+/** Per-day, per-category manual override, scoped to the caller's household. Pass `mealId: null` to clear a slot (only valid for optional categories like soup). */
+export async function setPlanEntryMeal(
+  householdId: string,
+  dateKey: string,
+  category: 'main' | 'soup',
+  mealId: string | null,
+) {
+  if (mealId !== null) {
+    const meal = await prisma.meal.findFirst({ where: { id: mealId, householdId } });
+    if (!meal) return null;
+  }
 
   const existing = await prisma.planEntry.findUnique({
-    where: { householdId_date: { householdId, date: new Date(dateKey) } },
+    where: { householdId_date_category: { householdId, date: new Date(dateKey), category } },
   });
   if (existing?.status === 'cooked') return null; // never silently un-cook immutable history
 
   return prisma.planEntry.upsert({
-    where: { householdId_date: { householdId, date: new Date(dateKey) } },
+    where: { householdId_date_category: { householdId, date: new Date(dateKey), category } },
     update: { mealId, status: 'planned' },
-    create: { householdId, date: new Date(dateKey), mealId, status: 'planned' },
+    create: { householdId, date: new Date(dateKey), category, mealId, status: 'planned' },
   });
 }
 
