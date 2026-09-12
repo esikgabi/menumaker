@@ -19,19 +19,19 @@ model Household {
 }
 
 model User {
-  id            String      @id @default(cuid())
-  googleId      String?     @unique
-  email         String      @unique
+  id            String     @id @default(cuid())
+  googleId      String?    @unique
+  email         String     @unique
   emailVerified DateTime?
   name          String?
   image         String?
-  locale        String      @default("en")
+  locale        String     @default("en")
   householdId   String?
-  household     Household?  @relation(fields: [householdId], references: [id])
-  createdMeals  Meal[]      @relation("MealCreatedBy")
+  household     Household? @relation(fields: [householdId], references: [id])
+  createdMeals  Meal[]     @relation("MealCreatedBy")
   accounts      Account[]
   sessions      Session[]
-  createdAt     DateTime    @default(now())
+  createdAt     DateTime   @default(now())
 }
 
 model Account {
@@ -69,24 +69,25 @@ model VerificationToken {
 }
 
 model Meal {
-  id            String      @id @default(cuid())
-  householdId   String
-  household     Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  name          String
-  note          String?
-  createdById   String?
-  createdBy     User?       @relation("MealCreatedBy", fields: [createdById], references: [id])
-  tags          MealTag[]
-  planEntries   PlanEntry[]
-  createdAt     DateTime    @default(now())
+  id          String       @id @default(cuid())
+  householdId String
+  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name        String
+  note        String?
+  category    MealCategory @default(main)
+  createdById String?
+  createdBy   User?        @relation("MealCreatedBy", fields: [createdById], references: [id])
+  tags        MealTag[]
+  planEntries PlanEntry[]
+  createdAt   DateTime     @default(now())
 }
 
 model Tag {
-  id            String      @id @default(cuid())
-  householdId   String
-  household     Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  name          String
-  meals         MealTag[]
+  id          String    @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name        String
+  meals       MealTag[]
 
   @@unique([householdId, name])
 }
@@ -94,8 +95,8 @@ model Tag {
 model MealTag {
   mealId String
   tagId  String
-  meal   Meal @relation(fields: [mealId], references: [id], onDelete: Cascade)
-  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  meal   Meal   @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([mealId, tagId])
 }
@@ -106,14 +107,20 @@ enum PlanEntryStatus {
   skipped
 }
 
+enum MealCategory {
+  soup
+  main
+}
+
 model PlanEntry {
   id          String          @id @default(cuid())
   householdId String
   household   Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
   date        DateTime        @db.Date
+  category    MealCategory
   mealId      String?
   meal        Meal?           @relation(fields: [mealId], references: [id])
   status      PlanEntryStatus @default(planned)
 
-  @@unique([householdId, date])
+  @@unique([householdId, date, category])
 }
