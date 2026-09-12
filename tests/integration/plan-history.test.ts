@@ -69,4 +69,24 @@ describe('listCookedHistory', () => {
 
     expect(weeks).toHaveLength(0);
   });
+
+  it('returns main and soup entries for the same day as independent rows with their own category', async () => {
+    const { household, owner } = await makeHousehold('D');
+    const mainMeal = await createMeal(household.id, owner.id, { name: 'Main Dish', note: '', tagIds: [], category: 'main' });
+    const soupMeal = await createMeal(household.id, owner.id, { name: 'Soup Dish', note: '', tagIds: [], category: 'soup' });
+    const thisWeek = getWeekDateKeys(new Date());
+
+    await prisma.planEntry.createMany({
+      data: [
+        { householdId: household.id, date: new Date(thisWeek[0]), category: 'main', mealId: mainMeal.id, status: 'cooked' },
+        { householdId: household.id, date: new Date(thisWeek[0]), category: 'soup', mealId: soupMeal.id, status: 'cooked' },
+      ],
+    });
+
+    const weeks = await listCookedHistory(household.id);
+
+    expect(weeks[0].entries).toHaveLength(2);
+    const categories = weeks[0].entries.map((e) => e.category).sort();
+    expect(categories).toEqual(['main', 'soup']);
+  });
 });
