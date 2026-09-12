@@ -6,6 +6,7 @@ export const mealInputSchema = z.object({
   name: z.string().trim().min(1).max(100),
   note: z.string().trim().max(500).optional().or(z.literal('')),
   tagIds: z.array(z.string()),
+  category: z.enum(['soup', 'main']),
 });
 
 export type MealInput = z.infer<typeof mealInputSchema>;
