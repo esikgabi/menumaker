@@ -36,28 +36,42 @@ test('sign in, create household, add a meal, generate a week, and see it transit
 
   await page.getByRole('link', { name: 'Meals' }).click();
   await page.waitForURL('/meals');
+
+  // Main meal: category select defaults to "Main", so no extra interaction needed.
   await page.getByRole('button', { name: 'Add meal' }).click();
-  await page.getByRole('dialog').getByLabel('Name').fill('E2E Test Meal');
+  await page.getByRole('dialog').getByLabel('Name').fill('E2E Main Meal');
   await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByText('E2E Test Meal')).toBeVisible();
+  await expect(page.getByText('E2E Main Meal')).toBeVisible();
+
+  // Soup meal: explicitly switch the category select from its "Main" default.
+  await page.getByRole('button', { name: 'Add meal' }).click();
+  await page.getByRole('dialog').getByLabel('Name').fill('E2E Soup Meal');
+  await page.getByRole('combobox', { name: 'Category' }).click();
+  await page.getByRole('option', { name: 'Soup' }).click();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('E2E Soup Meal')).toBeVisible();
 
   await page.getByRole('link', { name: 'Weekly Plan' }).click();
   await page.waitForURL('/plan');
   await page.getByRole('button', { name: 'Generate week' }).click();
-  await expect(page.getByText('E2E Test Meal').first()).toBeVisible();
+  await expect(page.getByText('E2E Main Meal').first()).toBeVisible();
+  await expect(page.getByText('E2E Soup Meal').first()).toBeVisible();
 
-  // Simulate time passing: backdate today's plan entry directly via Prisma,
-  // since the app has no time-travel UI and this test can't wait real days.
+  // Simulate time passing: backdate today's main-slot plan entry directly via
+  // Prisma, since the app has no time-travel UI and this test can't wait real
+  // days. Scoped to category: 'main' since each day now has two rows
+  // (main + soup) and the test only needs one deterministic target row.
   const user = await prisma.user.findUniqueOrThrow({ where: { email: 'e2e-happy-path@example.com' } });
   const householdId = user.householdId!;
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const todayEntry = await prisma.planEntry.findFirst({
-    where: { householdId, status: 'planned', mealId: { not: null } },
+    where: { householdId, status: 'planned', mealId: { not: null }, category: 'main' },
   });
   // Clear any existing entry already on that date (the generated week may
-  // include yesterday's date too) to avoid the @@unique([householdId, date]) constraint.
+  // include yesterday's date too) to avoid the
+  // @@unique([householdId, date, category]) constraint.
   await prisma.planEntry.deleteMany({
-    where: { householdId, date: new Date(yesterday), id: { not: todayEntry!.id } },
+    where: { householdId, date: new Date(yesterday), category: 'main', id: { not: todayEntry!.id } },
   });
   await prisma.planEntry.update({
     where: { id: todayEntry!.id },
@@ -68,5 +82,5 @@ test('sign in, create household, add a meal, generate a week, and see it transit
 
   await page.getByRole('link', { name: 'History' }).click();
   await page.waitForURL('/history');
-  await expect(page.getByText('E2E Test Meal').first()).toBeVisible();
+  await expect(page.getByText('E2E Main Meal').first()).toBeVisible();
 });
