@@ -38,6 +38,7 @@ describe('meal CRUD and household isolation', () => {
       name: 'Salmon Salad',
       note: '',
       tagIds: [tag!.id],
+      category: 'main',
     });
 
     expect(meal.name).toBe('Salmon Salad');
@@ -56,6 +57,7 @@ describe('meal CRUD and household isolation', () => {
       name: 'Cross Household Meal',
       note: '',
       tagIds: [foreignTag!.id],
+      category: 'main',
     });
 
     expect(meal.tags).toHaveLength(0);
@@ -64,7 +66,7 @@ describe('meal CRUD and household isolation', () => {
   it('does not return meals from another household', async () => {
     const householdA = await makeHousehold('B');
     const ownerA = (await prisma.user.findFirst({ where: { householdId: householdA.id } }))!;
-    await createMeal(householdA.id, ownerA.id, { name: 'Household A Meal', note: '', tagIds: [] });
+    await createMeal(householdA.id, ownerA.id, { name: 'Household A Meal', note: '', tagIds: [], category: 'main' });
 
     const householdB = await makeHousehold('C');
 
@@ -79,8 +81,8 @@ describe('meal CRUD and household isolation', () => {
     const healthyTag = await createTag(household.id, 'healthy');
     const fastTag = await createTag(household.id, 'fast to make');
 
-    await createMeal(household.id, owner.id, { name: 'Healthy Meal', note: '', tagIds: [healthyTag!.id] });
-    await createMeal(household.id, owner.id, { name: 'Fast Meal', note: '', tagIds: [fastTag!.id] });
+    await createMeal(household.id, owner.id, { name: 'Healthy Meal', note: '', tagIds: [healthyTag!.id], category: 'main' });
+    await createMeal(household.id, owner.id, { name: 'Fast Meal', note: '', tagIds: [fastTag!.id], category: 'main' });
 
     const healthyMeals = await listMeals(household.id, healthyTag!.id);
 
@@ -91,11 +93,11 @@ describe('meal CRUD and household isolation', () => {
   it('rejects updating a meal that belongs to a different household', async () => {
     const householdA = await makeHousehold('E');
     const ownerA = (await prisma.user.findFirst({ where: { householdId: householdA.id } }))!;
-    const meal = await createMeal(householdA.id, ownerA.id, { name: 'Protected Meal', note: '', tagIds: [] });
+    const meal = await createMeal(householdA.id, ownerA.id, { name: 'Protected Meal', note: '', tagIds: [], category: 'main' });
 
     const householdB = await makeHousehold('F');
 
-    const result = await updateMeal(householdB.id, meal.id, { name: 'Hacked', note: '', tagIds: [] });
+    const result = await updateMeal(householdB.id, meal.id, { name: 'Hacked', note: '', tagIds: [], category: 'main' });
 
     expect(result).toBeNull();
   });
@@ -103,13 +105,59 @@ describe('meal CRUD and household isolation', () => {
   it('rejects deleting a meal that belongs to a different household', async () => {
     const householdA = await makeHousehold('G');
     const ownerA = (await prisma.user.findFirst({ where: { householdId: householdA.id } }))!;
-    const meal = await createMeal(householdA.id, ownerA.id, { name: 'Protected Meal 2', note: '', tagIds: [] });
+    const meal = await createMeal(householdA.id, ownerA.id, { name: 'Protected Meal 2', note: '', tagIds: [], category: 'main' });
 
     const householdB = await makeHousehold('H');
 
     const result = await deleteMeal(householdB.id, meal.id);
 
     expect(result).toBeNull();
+  });
+
+  it('persists the category chosen at creation', async () => {
+    const household = await makeHousehold('O');
+    const owner = (await prisma.user.findFirst({ where: { householdId: household.id } }))!;
+
+    const meal = await createMeal(household.id, owner.id, {
+      name: 'Chicken Soup',
+      note: '',
+      tagIds: [],
+      category: 'soup',
+    });
+
+    expect(meal.category).toBe('soup');
+  });
+
+  it('updates the category on an existing meal', async () => {
+    const household = await makeHousehold('P');
+    const owner = (await prisma.user.findFirst({ where: { householdId: household.id } }))!;
+    const meal = await createMeal(household.id, owner.id, {
+      name: 'Recategorized',
+      note: '',
+      tagIds: [],
+      category: 'main',
+    });
+
+    const updated = await updateMeal(household.id, meal.id, {
+      name: 'Recategorized',
+      note: '',
+      tagIds: [],
+      category: 'soup',
+    });
+
+    expect(updated?.category).toBe('soup');
+  });
+
+  it('filters meals by category', async () => {
+    const household = await makeHousehold('Q');
+    const owner = (await prisma.user.findFirst({ where: { householdId: household.id } }))!;
+    await createMeal(household.id, owner.id, { name: 'Soup Meal', note: '', tagIds: [], category: 'soup' });
+    await createMeal(household.id, owner.id, { name: 'Main Meal', note: '', tagIds: [], category: 'main' });
+
+    const soupMeals = await listMeals(household.id, undefined, 'soup');
+
+    expect(soupMeals).toHaveLength(1);
+    expect(soupMeals[0].name).toBe('Soup Meal');
   });
 });
 
@@ -147,7 +195,7 @@ describe('renameTag and deleteTag', () => {
     const household = await makeHousehold('L');
     const owner = (await prisma.user.findFirst({ where: { householdId: household.id } }))!;
     const tag = await createTag(household.id, 'deletable');
-    await createMeal(household.id, owner.id, { name: 'Tagged Meal', note: '', tagIds: [tag!.id] });
+    await createMeal(household.id, owner.id, { name: 'Tagged Meal', note: '', tagIds: [tag!.id], category: 'main' });
 
     const result = await deleteTag(household.id, tag!.id);
 
