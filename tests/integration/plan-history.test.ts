@@ -86,7 +86,7 @@ describe('listCookedHistory', () => {
     const weeks = await listCookedHistory(household.id);
 
     expect(weeks[0].entries).toHaveLength(2);
-    const categories = weeks[0].entries.map((e) => e.category).sort();
+    const categories = weeks[0].entries.map((e: (typeof weeks)[number]['entries'][number]) => e.category).sort();
     expect(categories).toEqual(['main', 'soup']);
   });
 });
