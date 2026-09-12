@@ -32,17 +32,17 @@ async function makeHousehold(suffix: string) {
 describe('listCookedHistory', () => {
   it('returns only cooked entries, grouped by week, most recent week first', async () => {
     const { household, owner } = await makeHousehold('A');
-    const meal = await createMeal(household.id, owner.id, { name: 'Cooked Meal', note: '', tagIds: [] });
+    const meal = await createMeal(household.id, owner.id, { name: 'Cooked Meal', note: '', tagIds: [], category: 'main' });
 
     const thisWeek = getWeekDateKeys(new Date());
     const lastWeek = getWeekDateKeys(new Date(new Date(thisWeek[0]).getTime() - 7 * 24 * 60 * 60 * 1000));
 
     await prisma.planEntry.createMany({
       data: [
-        { householdId: household.id, date: new Date(thisWeek[0]), mealId: meal.id, status: 'cooked' },
-        { householdId: household.id, date: new Date(thisWeek[1]), mealId: meal.id, status: 'planned' }, // excluded
-        { householdId: household.id, date: new Date(lastWeek[0]), mealId: meal.id, status: 'cooked' },
-        { householdId: household.id, date: new Date(lastWeek[1]), mealId: null, status: 'skipped' }, // excluded
+        { householdId: household.id, date: new Date(thisWeek[0]), category: 'main', mealId: meal.id, status: 'cooked' },
+        { householdId: household.id, date: new Date(thisWeek[1]), category: 'main', mealId: meal.id, status: 'planned' }, // excluded
+        { householdId: household.id, date: new Date(lastWeek[0]), category: 'main', mealId: meal.id, status: 'cooked' },
+        { householdId: household.id, date: new Date(lastWeek[1]), category: 'main', mealId: null, status: 'skipped' }, // excluded
       ],
     });
 
@@ -58,9 +58,9 @@ describe('listCookedHistory', () => {
 
   it('does not return another household’s history', async () => {
     const { household: householdA, owner: ownerA } = await makeHousehold('B');
-    const meal = await createMeal(householdA.id, ownerA.id, { name: 'A Meal', note: '', tagIds: [] });
+    const meal = await createMeal(householdA.id, ownerA.id, { name: 'A Meal', note: '', tagIds: [], category: 'main' });
     await prisma.planEntry.create({
-      data: { householdId: householdA.id, date: new Date(toDateKey(new Date())), mealId: meal.id, status: 'cooked' },
+      data: { householdId: householdA.id, date: new Date(toDateKey(new Date())), category: 'main', mealId: meal.id, status: 'cooked' },
     });
 
     const { household: householdB } = await makeHousehold('C');

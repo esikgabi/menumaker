@@ -36,7 +36,7 @@ async function makeHouseholdWithMeals(suffix: string, mealNames: string[]) {
   const household = await createHouseholdWithOwner(`Plan Test Household ${suffix}`, owner.id);
   const meals = [];
   for (const name of mealNames) {
-    meals.push(await createMeal(household.id, owner.id, { name, note: '', tagIds: [] }));
+    meals.push(await createMeal(household.id, owner.id, { name, note: '', tagIds: [], category: 'main' }));
   }
   return { household, owner, meals };
 }
@@ -151,7 +151,7 @@ describe('transitionPastPlannedEntries', () => {
     const { household, meals } = await makeHouseholdWithMeals('H', ['Meal 1']);
     const pastDateKey = toDateKey(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000));
     await prisma.planEntry.create({
-      data: { householdId: household.id, date: new Date(pastDateKey), mealId: meals[0].id, status: 'planned' },
+      data: { householdId: household.id, date: new Date(pastDateKey), category: 'main', mealId: meals[0].id, status: 'planned' },
     });
 
     await transitionPastPlannedEntries(household.id);
@@ -166,7 +166,7 @@ describe('transitionPastPlannedEntries', () => {
     const { household } = await makeHouseholdWithMeals('I', []);
     const pastDateKey = toDateKey(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000));
     await prisma.planEntry.create({
-      data: { householdId: household.id, date: new Date(pastDateKey), status: 'planned' },
+      data: { householdId: household.id, date: new Date(pastDateKey), category: 'main', status: 'planned' },
     });
 
     await transitionPastPlannedEntries(household.id);
@@ -181,7 +181,7 @@ describe('transitionPastPlannedEntries', () => {
     const { household } = await makeHouseholdWithMeals('J', []);
     const futureDateKey = toDateKey(new Date(Date.now() + 2 * 24 * 60 * 60 * 1000));
     await prisma.planEntry.create({
-      data: { householdId: household.id, date: new Date(futureDateKey), status: 'planned' },
+      data: { householdId: household.id, date: new Date(futureDateKey), category: 'main', status: 'planned' },
     });
 
     await transitionPastPlannedEntries(household.id);
