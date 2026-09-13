@@ -1,0 +1,90 @@
+{
+  "Nav": {
+    "plan": "Heti menü",
+    "meals": "Ételek",
+    "history": "Előzmények",
+    "settings": "Háztartás beállításai"
+  },
+  "SignIn": {
+    "title": "Bejelentkezés a MenuMakerbe",
+    "googleButton": "Bejelentkezés Google-fiókkal",
+    "devLoginLabel": "Fejlesztői bejelentkezés (csak helyi használatra)",
+    "nameLabel": "Név",
+    "emailLabel": "E-mail",
+    "continueButton": "Tovább"
+  },
+  "Onboarding": {
+    "title": "Üdvözlünk a MenuMakerben",
+    "createTitle": "Háztartás létrehozása",
+    "createNameLabel": "Háztartás neve",
+    "createButton": "Háztartás létrehozása",
+    "joinTitle": "Csatlakozás meghívókóddal",
+    "joinCodeLabel": "Meghívókód",
+    "joinButton": "Csatlakozás a háztartáshoz",
+    "invalidCode": "Ez a meghívókód érvénytelen vagy lejárt. Kérj újat egy háztartástagtól."
+  },
+  "Meals": {
+    "title": "Ételek",
+    "addMeal": "Étel hozzáadása",
+    "editMeal": "Étel szerkesztése",
+    "nameLabel": "Név",
+    "noteLabel": "Megjegyzés (opcionális)",
+    "tagsLabel": "Címkék",
+    "newTagPlaceholder": "Új címke neve",
+    "addTag": "Címke hozzáadása",
+    "save": "Mentés",
+    "delete": "Törlés",
+    "cancel": "Mégse",
+    "allTags": "Minden címke",
+    "noMeals": "Még nincs étel. Adj hozzá egyet a kezdéshez.",
+    "categoryLabel": "Kategória",
+    "categorySoup": "Leves",
+    "categoryMain": "Főétel",
+    "allCategories": "Minden kategória"
+  },
+  "Plan": {
+    "title": "Heti menü",
+    "generateWeek": "Hét generálása",
+    "generatingWeek": "Generálás…",
+    "overrideError": "Ezt a napot nem sikerült frissíteni. Próbáld újra.",
+    "noMealsYet": "Adj hozzá ételeket, mielőtt menüt generálnál.",
+    "notEnoughMealsWarning": "Csak {count} étel áll rendelkezésre 7 napra — néhány nap ismétlődni fog.",
+    "noMealAssigned": "Nincs étel hozzárendelve",
+    "mainLabel": "Főétel",
+    "soupLabel": "Leves",
+    "noneOption": "Nincs",
+    "statusCooked": "Elkészült",
+    "statusSkipped": "Kihagyva",
+    "monday": "Hétfő",
+    "tuesday": "Kedd",
+    "wednesday": "Szerda",
+    "thursday": "Csütörtök",
+    "friday": "Péntek",
+    "saturday": "Szombat",
+    "sunday": "Vasárnap"
+  },
+  "History": {
+    "title": "Előzmények",
+    "weekOf": "{date} hete",
+    "noHistory": "Még nincs előzmény. Amint egy tervezett nap eltelik, itt fog megjelenni."
+  },
+  "Settings": {
+    "title": "Háztartás beállításai",
+    "householdNameLabel": "Háztartás neve",
+    "save": "Mentés",
+    "inviteCodeLabel": "Meghívókód",
+    "inviteLinkLabel": "Meghívó link",
+    "copy": "Másolás",
+    "copied": "Másolva!",
+    "membersTitle": "Tagok",
+    "tagsTitle": "Címkék",
+    "newTagPlaceholder": "Új címke neve",
+    "addTag": "Címke hozzáadása",
+    "rename": "Átnevezés",
+    "delete": "Törlés",
+    "leaveHousehold": "Háztartás elhagyása",
+    "leaveConfirm": "Biztosan elhagyod ezt a háztartást? Ha te vagy az utolsó tag, minden étel és előzmény törlődik.",
+    "signOut": "Kijelentkezés",
+    "you": "(te)"
+  }
+}
