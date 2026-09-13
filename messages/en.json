@@ -1,0 +1,90 @@
+{
+  "Nav": {
+    "plan": "Weekly Plan",
+    "meals": "Meals",
+    "history": "History",
+    "settings": "Settings"
+  },
+  "SignIn": {
+    "title": "Sign in to MenuMaker",
+    "googleButton": "Sign in with Google",
+    "devLoginLabel": "Dev login (local only)",
+    "nameLabel": "Name",
+    "emailLabel": "Email",
+    "continueButton": "Continue"
+  },
+  "Onboarding": {
+    "title": "Welcome to MenuMaker",
+    "createTitle": "Create a household",
+    "createNameLabel": "Household name",
+    "createButton": "Create household",
+    "joinTitle": "Join with invite code",
+    "joinCodeLabel": "Invite code",
+    "joinButton": "Join household",
+    "invalidCode": "That invite code is invalid or expired. Ask a household member for a new one."
+  },
+  "Meals": {
+    "title": "Meals",
+    "addMeal": "Add meal",
+    "editMeal": "Edit meal",
+    "nameLabel": "Name",
+    "noteLabel": "Note (optional)",
+    "tagsLabel": "Tags",
+    "newTagPlaceholder": "New tag name",
+    "addTag": "Add tag",
+    "save": "Save",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "allTags": "All tags",
+    "noMeals": "No meals yet. Add your first meal to get started.",
+    "categoryLabel": "Category",
+    "categorySoup": "Soup",
+    "categoryMain": "Main",
+    "allCategories": "All categories"
+  },
+  "Plan": {
+    "title": "Weekly Plan",
+    "generateWeek": "Generate week",
+    "generatingWeek": "Generating…",
+    "overrideError": "Could not update this day. Please try again.",
+    "noMealsYet": "Add some meals first before generating a plan.",
+    "notEnoughMealsWarning": "You only have {count} meals available for 7 days — some days will repeat.",
+    "noMealAssigned": "No meal assigned",
+    "mainLabel": "Main",
+    "soupLabel": "Soup",
+    "noneOption": "None",
+    "statusCooked": "Cooked",
+    "statusSkipped": "Skipped",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
+  },
+  "History": {
+    "title": "History",
+    "weekOf": "Week of {date}",
+    "noHistory": "No cooking history yet. Once a planned day passes, it will show up here."
+  },
+  "Settings": {
+    "title": "Household Settings",
+    "householdNameLabel": "Household name",
+    "save": "Save",
+    "inviteCodeLabel": "Invite code",
+    "inviteLinkLabel": "Invite link",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "membersTitle": "Members",
+    "tagsTitle": "Tags",
+    "newTagPlaceholder": "New tag name",
+    "addTag": "Add tag",
+    "rename": "Rename",
+    "delete": "Delete",
+    "leaveHousehold": "Leave household",
+    "leaveConfirm": "Are you sure you want to leave this household? If you're the last member, all its meals and history will be deleted.",
+    "signOut": "Sign out",
+    "you": "(you)"
+  }
+}
