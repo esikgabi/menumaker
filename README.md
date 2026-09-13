@@ -65,7 +65,7 @@ generates a weekly meal plan that avoids recent repeats and balances tags.
 
 ## Deployment (Raspberry Pi 5 / openmediavault)
 
-MenuMaker runs as two Docker containers defined in `docker-compose.yml`: `app` (the Next.js server) and `postgres` (PostgreSQL 16 with a named volume for persistence).
+MenuMaker runs as two Docker containers defined in `docker-compose.yml`: `app` (the Next.js server, pulled as a pre-built image from GHCR — see `.github/workflows/docker-publish.yml`) and `postgres` (PostgreSQL 16 with a named volume for persistence). No git checkout or build step is needed on the Pi; you only need `docker-compose.yml` and a `.env` file.
 
 ### 1. Create a Google OAuth client
 
@@ -90,19 +90,21 @@ Do **not** set `ENABLE_MOCK_AUTH` or `NEXT_PUBLIC_ENABLE_MOCK_AUTH` in this file
 ### 3. Deploy via openmediavault's Compose UI
 
 1. In openmediavault, install the **Compose** plugin if not already present (Services → Compose).
-2. Create a new Compose project, pointing at (or pasting the contents of) this repo's `docker-compose.yml`, in the same directory as your `.env` file from step 2 (Compose automatically loads `.env` for variable substitution).
-3. Deploy the project ("Up"). On first start, `docker-entrypoint.sh` runs `prisma migrate deploy` against the `postgres` service before starting the Next.js server — no manual migration step is needed.
-4. Once running, visit `NEXTAUTH_URL` in a browser and sign in with Google to confirm the deployment works end-to-end.
+2. On the Pi, create a directory (e.g. under an OMV-managed shared folder) containing just `docker-compose.yml` and `.env` from step 2 — no repo clone needed, since `app` uses the pre-built `ghcr.io/esikgabi/menumaker:latest` image. The GHCR package defaults to **private**; either make it public (package settings on GitHub → Change visibility) so the Pi can pull without credentials, or run `docker login ghcr.io` on the Pi with a [PAT that has `read:packages`](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry) scope.
+3. In OMV, add a new Compose file pointing at that `docker-compose.yml` (Compose automatically loads the sibling `.env` for variable substitution).
+4. Deploy the project ("Up"). On first start, `docker-entrypoint.sh` runs `prisma migrate deploy` against the `postgres` service before starting the Next.js server — no manual migration step is needed.
+5. Once running, visit `NEXTAUTH_URL` in a browser and sign in with Google to confirm the deployment works end-to-end.
 
 ### 4. Updating to a new version
 
+Every push to `main` rebuilds and republishes `ghcr.io/esikgabi/menumaker:latest` (multi-arch, includes `linux/arm64` for Pi5) via CI. To update the Pi:
+
 ```bash
-git pull
-docker compose build app
+docker compose pull
 docker compose up -d
 ```
 
-The entrypoint re-runs `prisma migrate deploy` on every restart, applying any new migrations automatically; already-applied migrations are no-ops.
+Or click Pull then Up in the OMV Compose UI. The entrypoint re-runs `prisma migrate deploy` on every restart, applying any new migrations automatically; already-applied migrations are no-ops.
 
 ### 5. Backups
 
