@@ -59,10 +59,15 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === 'google' && account.providerAccountId) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { googleId: account.providerAccountId },
+      if (account?.provider === 'google' && user.email) {
+        await prisma.user.upsert({
+          where: { email: user.email },
+          update: { googleId: account.providerAccountId || undefined },
+          create: {
+            email: user.email,
+            name: user.name || user.email,
+            googleId: account.providerAccountId || undefined,
+          },
         });
       }
       return true;
