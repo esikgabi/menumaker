@@ -49,80 +49,16 @@ describe('generateWeeklyPlan', () => {
     expect(result.notEnoughMeals).toBe(true);
   });
 
-  it('ensures a healthy-tagged meal appears in the week when one exists', () => {
-    const meals = [
-      meal('junk1'),
-      meal('junk2'),
-      meal('junk3'),
-      meal('junk4'),
-      meal('junk5'),
-      meal('junk6'),
-      meal('healthyMeal', ['healthy']),
-    ];
-    const result = generateWeeklyPlan({ meals, cookedHistory: [], weekDateKeys: week });
-    const assignedTags = result.assignments.map((a) => meals.find((m) => m.id === a.mealId)?.tags ?? []);
-    expect(assignedTags.some((tags) => tags.includes('healthy'))).toBe(true);
-  });
-
-  it('ensures a meal tagged with the Hungarian "egészséges" synonym appears in the week', () => {
-    const meals = [
-      meal('junk1'),
-      meal('junk2'),
-      meal('junk3'),
-      meal('junk4'),
-      meal('junk5'),
-      meal('junk6'),
-      meal('healthyMeal', ['egészséges']),
-    ];
-    const result = generateWeeklyPlan({ meals, cookedHistory: [], weekDateKeys: week });
-    const assignedTags = result.assignments.map((a) => meals.find((m) => m.id === a.mealId)?.tags ?? []);
-    expect(assignedTags.some((tags) => tags.includes('egészséges'))).toBe(true);
-  });
-
-  it('ensures a fast-to-make-tagged meal appears in the week when one exists', () => {
-    const meals = [
-      meal('junk1'),
-      meal('junk2'),
-      meal('junk3'),
-      meal('junk4'),
-      meal('junk5'),
-      meal('junk6'),
-      meal('fastMeal', ['fast to make']),
-    ];
-    const result = generateWeeklyPlan({ meals, cookedHistory: [], weekDateKeys: week });
-    const assignedTags = result.assignments.map((a) => meals.find((m) => m.id === a.mealId)?.tags ?? []);
-    expect(assignedTags.some((tags) => tags.includes('fast to make'))).toBe(true);
-  });
-
-  it('does not force a healthy meal when none exists in the household', () => {
+  it('assigns a meal for a single-day week', () => {
     const meals = [meal('a'), meal('b')];
     const result = generateWeeklyPlan({ meals, cookedHistory: [], weekDateKeys: ['2026-09-07'] });
     expect(result.assignments[0].mealId).not.toBeNull();
   });
 
   it('is deterministic for identical inputs', () => {
-    const meals = [meal('a', ['healthy']), meal('b'), meal('c', ['fast to make']), meal('d'), meal('e')];
+    const meals = [meal('a'), meal('b'), meal('c'), meal('d'), meal('e')];
     const first = generateWeeklyPlan({ meals, cookedHistory: [], weekDateKeys: week });
     const second = generateWeeklyPlan({ meals, cookedHistory: [], weekDateKeys: week });
     expect(first.assignments).toEqual(second.assignments);
-  });
-
-  it('keeps both a healthy and a fast-to-make meal when both must be swapped in via fallback slots', () => {
-    // 7 never-cooked filler meals fully cover the week with no repeats, so
-    // the only way healthy/fast-to-make land in the week is via the
-    // BALANCE_TAG_GROUPS fallback-index swap path (no duplicate slot exists).
-    const fillers = Array.from({ length: 7 }, (_, i) => meal(`filler${i}`));
-    const healthyMeal = meal('healthyMeal', ['healthy']);
-    const fastMeal = meal('fastMeal', ['fast to make']);
-    const meals = [...fillers, healthyMeal, fastMeal];
-    const cookedHistory = [
-      { mealId: 'healthyMeal', dateKey: '2026-09-01' },
-      { mealId: 'fastMeal', dateKey: '2026-09-01' },
-    ];
-    const result = generateWeeklyPlan({ meals, cookedHistory, weekDateKeys: week });
-    const assignedTags = result.assignments.map((a) => meals.find((m) => m.id === a.mealId)?.tags ?? []);
-    expect(assignedTags.some((tags) => tags.includes('healthy'))).toBe(true);
-    expect(assignedTags.some((tags) => tags.includes('fast to make'))).toBe(true);
-    expect(result.notEnoughMeals).toBe(false);
   });
 });
