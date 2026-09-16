@@ -57,21 +57,22 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/signin',
   },
-  callbacks: {
+  events: {
+    // Runs after the PrismaAdapter has already created/linked the User and
+    // Account rows, so this only ever updates an existing user by id — it
+    // must not upsert by email itself, or it races the adapter's own
+    // getUserByEmail check and makes every first-time Google sign-in fail
+    // with OAuthAccountNotLinked.
     async signIn({ user, account }) {
-      if (account?.provider === 'google' && user.email) {
-        await prisma.user.upsert({
-          where: { email: user.email },
-          update: { googleId: account.providerAccountId || undefined },
-          create: {
-            email: user.email,
-            name: user.name || user.email,
-            googleId: account.providerAccountId || undefined,
-          },
+      if (account?.provider === 'google' && account.providerAccountId) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { googleId: account.providerAccountId },
         });
       }
-      return true;
     },
+  },
+  callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
