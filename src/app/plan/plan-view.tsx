@@ -114,7 +114,7 @@ export function PlanView({
 
       {!hasMeals && <p className="text-sm text-muted-foreground">{t('noMealsYet')}</p>}
       {hasMeals && notEnoughMeals && (
-        <p className="rounded bg-amber-100 p-2 text-sm text-amber-900">
+        <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
           {t('notEnoughMealsWarning', { count: mealCount })}
         </p>
       )}
