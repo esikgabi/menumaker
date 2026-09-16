@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { execSync } from 'child_process';
 import { prisma } from '@/lib/prisma';
-import { createHouseholdWithOwner, joinHouseholdByInviteCode, DEFAULT_TAGS } from '@/lib/household';
+import { createHouseholdWithOwner, joinHouseholdByInviteCode } from '@/lib/household';
 
 beforeAll(() => {
   execSync('npx prisma migrate deploy', { env: process.env, stdio: 'inherit' });
@@ -19,7 +19,7 @@ afterAll(async () => {
 });
 
 describe('createHouseholdWithOwner', () => {
-  it('seeds 5 default tags and assigns the owner', async () => {
+  it('creates a household with zero tags and assigns the owner', async () => {
     const owner = await prisma.user.create({
       data: { email: 'owner@household-test.example.com', name: 'Owner' },
     });
@@ -27,7 +27,7 @@ describe('createHouseholdWithOwner', () => {
     const household = await createHouseholdWithOwner('Test Household A', owner.id);
 
     const tags = await prisma.tag.findMany({ where: { householdId: household.id } });
-    expect(tags.map((t) => t.name).sort()).toEqual([...DEFAULT_TAGS].sort());
+    expect(tags).toHaveLength(0);
 
     const updatedOwner = await prisma.user.findUnique({ where: { id: owner.id } });
     expect(updatedOwner?.householdId).toBe(household.id);
