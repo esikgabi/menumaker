@@ -36,7 +36,16 @@ export type PlanMeal = { id: string; name: string; tags: string[] };
 export type CookedHistoryEntry = { mealId: string; dateKey: string };
 
 const AVOID_REPEAT_WEEKS = 3;
-const BALANCE_TAGS = ['healthy', 'fast to make'];
+// Synonym groups for the weekly-plan tag-balance pass below. Each group is
+// one balancing concern (e.g. "healthy") with equivalent tag names across
+// every supported locale (see src/i18n/config.ts SUPPORTED_LOCALES) — a
+// household's meal just needs to carry ANY one of these exact tag names.
+// Add a new entry to each group (not a new group) when SUPPORTED_LOCALES
+// grows.
+const BALANCE_TAG_GROUPS: string[][] = [
+  ['healthy', 'egészséges'],
+  ['fast to make', 'gyors'],
+];
 
 export function generateWeeklyPlan(input: {
   meals: PlanMeal[];
@@ -93,12 +102,14 @@ export function generateWeeklyPlan(input: {
   // that holds a *repeated* meal, preferring not to disturb days whose meal
   // is uniquely assigned that week.
   const usedSwapIndices = new Set<number>();
-  for (const requiredTag of BALANCE_TAGS) {
-    const alreadyPresent = assignedMealIds.some((id) => meals.find((m) => m.id === id)?.tags.includes(requiredTag));
+  for (const tagGroup of BALANCE_TAG_GROUPS) {
+    const alreadyPresent = assignedMealIds.some((id) =>
+      meals.find((m) => m.id === id)?.tags.some((tag) => tagGroup.includes(tag)),
+    );
     if (alreadyPresent) continue;
 
-    const candidate = ranked.find((m) => m.tags.includes(requiredTag));
-    if (!candidate) continue; // household has no meal with this tag at all
+    const candidate = ranked.find((m) => m.tags.some((tag) => tagGroup.includes(tag)));
+    if (!candidate) continue; // household has no meal with any tag in this group
 
     const duplicateIndex = assignedMealIds.findIndex(
       (id, idx) => assignedMealIds.indexOf(id) !== idx && !usedSwapIndices.has(idx),
