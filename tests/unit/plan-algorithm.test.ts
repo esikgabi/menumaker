@@ -64,6 +64,21 @@ describe('generateWeeklyPlan', () => {
     expect(assignedTags.some((tags) => tags.includes('healthy'))).toBe(true);
   });
 
+  it('ensures a meal tagged with the Hungarian "egészséges" synonym appears in the week', () => {
+    const meals = [
+      meal('junk1'),
+      meal('junk2'),
+      meal('junk3'),
+      meal('junk4'),
+      meal('junk5'),
+      meal('junk6'),
+      meal('healthyMeal', ['egészséges']),
+    ];
+    const result = generateWeeklyPlan({ meals, cookedHistory: [], weekDateKeys: week });
+    const assignedTags = result.assignments.map((a) => meals.find((m) => m.id === a.mealId)?.tags ?? []);
+    expect(assignedTags.some((tags) => tags.includes('egészséges'))).toBe(true);
+  });
+
   it('ensures a fast-to-make-tagged meal appears in the week when one exists', () => {
     const meals = [
       meal('junk1'),
