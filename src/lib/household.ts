@@ -1,14 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-export const DEFAULT_TAGS = [
-  'child favourite',
-  'absolute favourite',
-  'parent favourite',
-  'healthy',
-  'fast to make',
-];
-
 export function generateInviteCode(): string {
   return crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
 }
@@ -22,7 +14,6 @@ export async function createHouseholdWithOwner(name: string, ownerUserId: string
     data: {
       name,
       inviteCode: generateInviteCode(),
-      tags: { create: DEFAULT_TAGS.map((tagName) => ({ name: tagName })) },
       users: { connect: { id: ownerUserId } },
     },
   });

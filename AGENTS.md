@@ -86,8 +86,7 @@ There's no Prettier config — formatting relies on ESLint
   (`generateAndSaveWeeklyPlan`, `getOrCreateWeekPlan`, etc.) wraps it. Keep
   that split when changing the algorithm — it's what makes it testable.
   `generateAndSaveWeeklyPlan` calls the pure function once per
-  `MealCategory` (main gets tag balancing, soup doesn't) — adding a new
-  category later is one more enum value + one more pass, not a schema
-  change.
+  `MealCategory` — adding a new category later is one more enum value + one
+  more pass, not a schema change.
 - **i18n**: add new user-facing strings to both `messages/en.json` and
   `messages/hu.json` with the same key.

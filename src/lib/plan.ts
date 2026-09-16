@@ -36,7 +36,6 @@ export type PlanMeal = { id: string; name: string; tags: string[] };
 export type CookedHistoryEntry = { mealId: string; dateKey: string };
 
 const AVOID_REPEAT_WEEKS = 3;
-const BALANCE_TAGS = ['healthy', 'fast to make'];
 
 export function generateWeeklyPlan(input: {
   meals: PlanMeal[];
@@ -82,31 +81,11 @@ export function generateWeeklyPlan(input: {
 
   const notEnoughMeals = meals.length < weekDateKeys.length;
 
-  // First pass: no repeats while distinct candidates remain, then cycle.
+  // No repeats while distinct candidates remain, then cycle.
   const assignedMealIds: string[] = [];
   for (let i = 0; i < weekDateKeys.length; i++) {
     const unused = ranked.find((m) => !assignedMealIds.includes(m.id));
     assignedMealIds.push(unused ? unused.id : ranked[i % ranked.length].id);
-  }
-
-  // Second pass: tag balance. Swap in a tagged candidate for the first day
-  // that holds a *repeated* meal, preferring not to disturb days whose meal
-  // is uniquely assigned that week.
-  const usedSwapIndices = new Set<number>();
-  for (const requiredTag of BALANCE_TAGS) {
-    const alreadyPresent = assignedMealIds.some((id) => meals.find((m) => m.id === id)?.tags.includes(requiredTag));
-    if (alreadyPresent) continue;
-
-    const candidate = ranked.find((m) => m.tags.includes(requiredTag));
-    if (!candidate) continue; // household has no meal with this tag at all
-
-    const duplicateIndex = assignedMealIds.findIndex(
-      (id, idx) => assignedMealIds.indexOf(id) !== idx && !usedSwapIndices.has(idx),
-    );
-    const fallbackIndex = assignedMealIds.findIndex((_, idx) => !usedSwapIndices.has(idx));
-    const swapIndex = duplicateIndex !== -1 ? duplicateIndex : fallbackIndex !== -1 ? fallbackIndex : 0;
-    assignedMealIds[swapIndex] = candidate.id;
-    usedSwapIndices.add(swapIndex);
   }
 
   return {
