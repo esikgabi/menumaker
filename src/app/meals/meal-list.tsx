@@ -44,13 +44,13 @@ export function MealList({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Select
             value={activeTag ?? 'all'}
             onValueChange={(value) => router.push(buildUrl(value === 'all' ? undefined : value, activeCategory))}
           >
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -66,7 +66,7 @@ export function MealList({
             value={activeCategory ?? 'all'}
             onValueChange={(value) => router.push(buildUrl(activeTag, value === 'all' ? undefined : value))}
           >
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -76,18 +76,20 @@ export function MealList({
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => setIsAdding(true)}>{t('addMeal')}</Button>
+        <Button onClick={() => setIsAdding(true)} className="w-full sm:w-auto">
+          {t('addMeal')}
+        </Button>
       </div>
 
       {meals.length === 0 && <p className="text-sm text-muted-foreground">{t('noMeals')}</p>}
 
       <ul className="flex flex-col gap-2">
         {meals.map((meal) => (
-          <li key={meal.id} className="flex items-center justify-between rounded border p-3">
+          <li key={meal.id} className="flex flex-col gap-3 rounded border p-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-medium">{meal.name}</p>
               {meal.note && <p className="text-sm text-muted-foreground">{meal.note}</p>}
-              <div className="mt-1 flex gap-1">
+              <div className="mt-1 flex flex-wrap gap-1">
                 <Badge variant="default">{meal.category === 'soup' ? t('categorySoup') : t('categoryMain')}</Badge>
                 {meal.tags.map((tag) => (
                   <Badge key={tag.id} variant="secondary">
