@@ -110,7 +110,7 @@ describe('generateWeeklyPlan', () => {
   it('keeps both a healthy and a fast-to-make meal when both must be swapped in via fallback slots', () => {
     // 7 never-cooked filler meals fully cover the week with no repeats, so
     // the only way healthy/fast-to-make land in the week is via the
-    // BALANCE_TAGS fallback-index swap path (no duplicate slot exists).
+    // BALANCE_TAG_GROUPS fallback-index swap path (no duplicate slot exists).
     const fillers = Array.from({ length: 7 }, (_, i) => meal(`filler${i}`));
     const healthyMeal = meal('healthyMeal', ['healthy']);
     const fastMeal = meal('fastMeal', ['fast to make']);
