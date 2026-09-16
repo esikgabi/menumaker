@@ -1,7 +1,7 @@
 # menumaker
 MenuMaker helps a household decide what to cook next. It tracks meals and tags
 (child favourite, healthy, fast to make, ...), records cooking history, and
-generates a weekly meal plan that avoids recent repeats and balances tags.
+generates a weekly meal plan that avoids recent repeats.
 
 ## Features
 
@@ -9,11 +9,10 @@ generates a weekly meal plan that avoids recent repeats and balances tags.
 - **Households**: create one or join via invite code; meals/tags/plans are
   scoped per household.
 - **Weekly plan**: generates a plan for today through the end of the current
-  week, with independent Main and Soup slots per day. Main uses the
-  recency-avoidance + tag-balancing algorithm; Soup uses recency-avoidance
-  only (scoped to soup-category meals) and can be left empty ("None").
-  Swap either slot from a dropdown; past days auto-transition to
-  "cooked"/"skipped" independently per slot.
+  week, with independent Main and Soup slots per day. Both slots use a
+  recency-avoidance algorithm (scoped to their own meal category) and can be
+  left empty ("None"). Swap either slot from a dropdown; past days
+  auto-transition to "cooked"/"skipped" independently per slot.
 - **Meals & tags**: CRUD for meals, tag them, categorize each as Soup or
   Main, filter by tag or category.
 - **History**: read-only view of past cooked/skipped meals, grouped by week.
