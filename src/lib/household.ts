@@ -39,6 +39,10 @@ export async function renameHousehold(householdId: string, name: string) {
   return prisma.household.update({ where: { id: householdId }, data: { name } });
 }
 
+export async function getHousehold(householdId: string) {
+  return prisma.household.findUnique({ where: { id: householdId } });
+}
+
 export async function listHouseholdMembers(householdId: string) {
   return prisma.user.findMany({
     where: { householdId },
