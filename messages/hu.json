@@ -48,7 +48,7 @@
     "generatingWeek": "Generálás…",
     "overrideError": "Ezt a napot nem sikerült frissíteni. Próbáld újra.",
     "noMealsYet": "Adj hozzá ételeket, mielőtt menüt generálnál.",
-    "notEnoughMealsWarning": "Csak {count} étel áll rendelkezésre 7 napra — néhány nap ismétlődni fog.",
+    "notEnoughMealsWarning": "Csak {count} étel áll rendelkezésre {days} napra — néhány nap ismétlődni fog.",
     "noMealAssigned": "Nincs étel hozzárendelve",
     "mainLabel": "Főétel",
     "soupLabel": "Leves",

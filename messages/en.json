@@ -48,7 +48,7 @@
     "generatingWeek": "Generating…",
     "overrideError": "Could not update this day. Please try again.",
     "noMealsYet": "Add some meals first before generating a plan.",
-    "notEnoughMealsWarning": "You only have {count} meals available for 7 days — some days will repeat.",
+    "notEnoughMealsWarning": "You only have {count} meals available for {days} days — some days will repeat.",
     "noMealAssigned": "No meal assigned",
     "mainLabel": "Main",
     "soupLabel": "Soup",

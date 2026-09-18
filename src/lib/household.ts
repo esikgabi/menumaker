@@ -2,13 +2,14 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 export function generateInviteCode(): string {
-  return crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
+  return crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase();
 }
 
-// ponytail: invite codes are not checked for collisions before insert (8-char
-// keyspace is ~2.8e12, astronomically unlikely at this app's scale). If a
-// collision ever happens, Prisma throws a unique-constraint error and the
-// household is not created; add a retry loop if this is ever observed.
+// ponytail: invite codes are not checked for collisions before insert (12-hex-char
+// keyspace is 16^12 ≈ 2.8e14; pre-fix 8-hex codes were only ~4.3e9 and the join
+// endpoint had no rate limit, so they were brute-forceable). If a collision ever
+// happens, Prisma throws a unique-constraint error and the household is not
+// created; add a retry loop if this is ever observed.
 export async function createHouseholdWithOwner(name: string, ownerUserId: string) {
   return prisma.household.create({
     data: {
@@ -36,6 +37,10 @@ export const householdNameSchema = z.string().trim().min(1).max(100);
 // unvalidated input.
 export async function renameHousehold(householdId: string, name: string) {
   return prisma.household.update({ where: { id: householdId }, data: { name } });
+}
+
+export async function getHousehold(householdId: string) {
+  return prisma.household.findUnique({ where: { id: householdId } });
 }
 
 export async function listHouseholdMembers(householdId: string) {

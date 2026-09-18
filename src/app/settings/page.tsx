@@ -1,7 +1,7 @@
 import { requireHousehold } from '@/lib/session';
-import { listHouseholdMembers } from '@/lib/household';
+import { getHousehold, listHouseholdMembers } from '@/lib/household';
 import { listTags } from '@/lib/meal';
-import { prisma } from '@/lib/prisma';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { SettingsView } from './settings-view';
 
@@ -11,10 +11,11 @@ export default async function SettingsPage() {
   const t = await getTranslations('Settings');
 
   const [household, members, tags] = await Promise.all([
-    prisma.household.findUniqueOrThrow({ where: { id: householdId } }),
+    getHousehold(householdId),
     listHouseholdMembers(householdId),
     listTags(householdId),
   ]);
+  if (!household) redirect('/onboarding'); // household vanished under us (e.g. last member left)
 
   return (
     <div className="flex flex-col gap-4">

@@ -3,7 +3,7 @@ import { execSync } from 'child_process';
 import { prisma } from '@/lib/prisma';
 import { createHouseholdWithOwner } from '@/lib/household';
 import { createMeal } from '@/lib/meal';
-import { listCookedHistory, toDateKey, getWeekDateKeys } from '@/lib/plan';
+import { listCookedHistory, localDateKey, getWeekDateKeys } from '@/lib/plan';
 
 beforeAll(() => {
   execSync('npx prisma migrate deploy', { env: process.env, stdio: 'inherit' });
@@ -60,7 +60,7 @@ describe('listCookedHistory', () => {
     const { household: householdA, owner: ownerA } = await makeHousehold('B');
     const meal = await createMeal(householdA.id, ownerA.id, { name: 'A Meal', note: '', tagIds: [], category: 'main' });
     await prisma.planEntry.create({
-      data: { householdId: householdA.id, date: new Date(toDateKey(new Date())), category: 'main', mealId: meal.id, status: 'cooked' },
+      data: { householdId: householdA.id, date: new Date(localDateKey(new Date())), category: 'main', mealId: meal.id, status: 'cooked' },
     });
 
     const { household: householdB } = await makeHousehold('C');
@@ -88,5 +88,20 @@ describe('listCookedHistory', () => {
     expect(weeks[0].entries).toHaveLength(2);
     const categories = weeks[0].entries.map((e: (typeof weeks)[number]['entries'][number]) => e.category).sort();
     expect(categories).toEqual(['main', 'soup']);
+  });
+
+  it('excludes cooked entries whose meal was deleted', async () => {
+    const { household, owner } = await makeHousehold('E');
+    const meal = await createMeal(household.id, owner.id, { name: 'Doomed Meal', note: '', tagIds: [], category: 'main' });
+    const thisWeek = getWeekDateKeys(new Date());
+
+    await prisma.planEntry.create({
+      data: { householdId: household.id, date: new Date(thisWeek[0]), category: 'main', mealId: meal.id, status: 'cooked' },
+    });
+    await prisma.meal.delete({ where: { id: meal.id } }); // ON DELETE SET NULL -> mealId null
+
+    const weeks = await listCookedHistory(household.id);
+
+    expect(weeks).toHaveLength(0);
   });
 });

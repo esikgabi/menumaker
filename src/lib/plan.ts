@@ -1,21 +1,31 @@
 import { prisma } from '@/lib/prisma';
 
+// ponytail: toDateKey is UTC on purpose — dates stored as @db.Date come back
+// from Prisma as UTC-midnight instants, so UTC slicing round-trips exactly.
+// Never use it to derive "today" from a wall clock; use localDateKey for that.
 export function toDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-/** Returns the 7 date keys (Monday..Sunday) for the week containing `reference`. */
+// The local-calendar equivalent of toDateKey: for "now" and locally
+// constructed Dates. Single server TZ; multi-timezone households would need a
+// per-user TZ (upgrade path, not needed for one household per deployment).
+export function localDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/** Returns the 7 date keys (Monday..Sunday) for the week containing `reference`, using the server's local calendar. */
 export function getWeekDateKeys(reference: Date): string[] {
-  const day = reference.getUTCDay(); // 0=Sun..6=Sat
+  const day = reference.getDay(); // 0=Sun..6=Sat
   const mondayOffset = (day + 6) % 7; // days since Monday
   const monday = new Date(
-    Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate() - mondayOffset),
+    reference.getFullYear(), reference.getMonth(), reference.getDate() - mondayOffset,
   );
 
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
-    d.setUTCDate(monday.getUTCDate() + i);
-    return toDateKey(d);
+    d.setDate(monday.getDate() + i);
+    return localDateKey(d);
   });
 }
 
@@ -28,7 +38,7 @@ export function getWeekDateKeys(reference: Date): string[] {
  * independently.
  */
 export function getFutureWeekDateKeys(reference: Date, today: Date = reference): string[] {
-  const todayKey = toDateKey(today);
+  const todayKey = localDateKey(today);
   return getWeekDateKeys(reference).filter((k) => k >= todayKey);
 }
 
@@ -96,7 +106,7 @@ export function generateWeeklyPlan(input: {
 
 /** Transitions past `planned` entries to `cooked` (if a meal was assigned) or `skipped` (if not). */
 export async function transitionPastPlannedEntries(householdId: string) {
-  const todayKey = toDateKey(new Date());
+  const todayKey = localDateKey(new Date());
 
   await prisma.planEntry.updateMany({
     where: { householdId, status: 'planned', date: { lt: new Date(todayKey) }, mealId: { not: null } },
@@ -214,11 +224,13 @@ export async function setPlanEntryMeal(
 
 /** Returns cooked PlanEntry rows for a household, grouped by Monday-start week, most recent week first. */
 export async function listCookedHistory(householdId: string) {
-  const entries = await prisma.planEntry.findMany({
-    where: { householdId, status: 'cooked' },
-    include: { meal: { include: { tags: { include: { tag: true } } } } },
-    orderBy: { date: 'desc' },
-  });
+  const entries = (
+    await prisma.planEntry.findMany({
+      where: { householdId, status: 'cooked' },
+      include: { meal: { include: { tags: { include: { tag: true } } } } },
+      orderBy: { date: 'desc' },
+    })
+  ).filter((e) => e.meal !== null); // deleting a meal nulls the FK (ON DELETE SET NULL); don't render anonymous history rows
 
   const weekMap = new Map<string, typeof entries>();
   for (const entry of entries) {
