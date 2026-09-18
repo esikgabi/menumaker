@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { generateInviteCode, householdNameSchema } from '@/lib/household';
 
 describe('generateInviteCode', () => {
-  it('generates an 8-character uppercase alphanumeric code', () => {
+  it('generates a 12-character uppercase hex code', () => {
     const code = generateInviteCode();
-    expect(code).toMatch(/^[A-Z0-9]{8}$/);
+    expect(code).toMatch(/^[0-9A-F]{12}$/);
   });
 });
 
