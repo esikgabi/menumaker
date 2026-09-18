@@ -50,7 +50,7 @@ export function SettingsView({
   async function handleAddTag() {
     if (!newTagName.trim()) return;
     const tag = await createTagAction(newTagName.trim());
-    if (tag) setTagList((prev) => [...prev, tag]);
+    if (tag) setTagList((prev) => (prev.some((t) => t.id === tag.id) ? prev : [...prev, tag]));
     setNewTagName('');
   }
 

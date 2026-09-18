@@ -52,7 +52,8 @@ export default async function PlanPage() {
       mainMeals={mainMeals.map((m) => ({ id: m.id, name: m.name, tags: m.tags.map((mt) => mt.tag.name) }))}
       soupMeals={soupMeals.map((m) => ({ id: m.id, name: m.name, tags: m.tags.map((mt) => mt.tag.name) }))}
       hasMeals={mainMeals.length > 0}
-      notEnoughMeals={mainMeals.length > 0 && mainMeals.length < 7}
+      notEnoughMeals={mainMeals.length > 0 && mainMeals.length < futureWeek.length}
+      dayCount={futureWeek.length}
       mealCount={mainMeals.length}
     />
   );
