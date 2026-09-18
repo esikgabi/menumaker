@@ -52,26 +52,25 @@ export async function createMeal(householdId: string, createdById: string, input
 }
 
 export async function updateMeal(householdId: string, mealId: string, input: MealInput) {
-  // ponytail: verifies household ownership by scoping the update's WHERE
-  // clause instead of a separate SELECT-then-check. If Prisma's updateMany
-  // affects 0 rows the caller (Server Action) treats it as "not found /
-  // not yours" — no separate authorization check needed at this scale.
-  const owned = await prisma.meal.findFirst({ where: { id: mealId, householdId } });
-  if (!owned) return null;
-
-  await prisma.mealTag.deleteMany({ where: { mealId } });
-
   const tagIds = await ownedTagIds(householdId, input.tagIds);
 
-  return prisma.meal.update({
-    where: { id: mealId },
-    data: {
-      name: input.name,
-      note: input.note || null,
-      category: input.category,
-      tags: { create: tagIds.map((tagId) => ({ tagId })) },
-    },
-    include: { tags: { include: { tag: true } } },
+  // One transaction so a failed recreate can't leave the meal with zero tags.
+  return prisma.$transaction(async (tx) => {
+    const owned = await tx.meal.findFirst({ where: { id: mealId, householdId } });
+    if (!owned) return null;
+
+    await tx.mealTag.deleteMany({ where: { mealId } });
+
+    return tx.meal.update({
+      where: { id: mealId },
+      data: {
+        name: input.name,
+        note: input.note || null,
+        category: input.category,
+        tags: { create: tagIds.map((tagId) => ({ tagId })) },
+      },
+      include: { tags: { include: { tag: true } } },
+    });
   });
 }
 
