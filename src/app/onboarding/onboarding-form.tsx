@@ -27,7 +27,7 @@ export function OnboardingForm() {
         <CardContent>
           <form action={createHouseholdAction} className="flex flex-col gap-3">
             <Label htmlFor="name">{t('createNameLabel')}</Label>
-            <Input id="name" name="name" required />
+            <Input id="name" name="name" required maxLength={100} />
             <Button type="submit">{t('createButton')}</Button>
           </form>
         </CardContent>
@@ -40,7 +40,7 @@ export function OnboardingForm() {
         <CardContent>
           <form action={joinHouseholdAction} className="flex flex-col gap-3">
             <Label htmlFor="inviteCode">{t('joinCodeLabel')}</Label>
-            <Input id="inviteCode" name="inviteCode" defaultValue={prefilledCode} required />
+            <Input id="inviteCode" name="inviteCode" defaultValue={prefilledCode} required maxLength={12} />
             <Button type="submit" variant="secondary">
               {t('joinButton')}
             </Button>
