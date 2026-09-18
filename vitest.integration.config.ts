@@ -9,6 +9,9 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // ponytail: integration arithmetic is written against UTC-midnight keys; a
+    // UTC pin keeps it exact and deterministic on any host/CI.
+    env: { TZ: 'UTC' },
     include: ['tests/integration/**/*.test.ts'],
     setupFiles: ['./tests/integration/setup.ts'],
     // ponytail: integration test files share one DB and truncate tables in

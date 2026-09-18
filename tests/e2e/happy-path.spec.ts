@@ -63,7 +63,11 @@ test('sign in, create household, add a meal, generate a week, and see it transit
   // (main + soup) and the test only needs one deterministic target row.
   const user = await prisma.user.findUniqueOrThrow({ where: { email: 'e2e-happy-path@example.com' } });
   const householdId = user.householdId!;
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  // Must match src/lib/plan's server-local "today" (both run on this machine's
+  // TZ). Inlined because Playwright's TS transform can't resolve the @/ alias.
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yesterday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const todayEntry = await prisma.planEntry.findFirst({
     where: { householdId, status: 'planned', mealId: { not: null }, category: 'main' },
   });
