@@ -3,7 +3,7 @@ import { execSync } from 'child_process';
 import { prisma } from '@/lib/prisma';
 import { createHouseholdWithOwner } from '@/lib/household';
 import { createMeal } from '@/lib/meal';
-import { listCookedHistory, toDateKey, getWeekDateKeys } from '@/lib/plan';
+import { listCookedHistory, localDateKey, getWeekDateKeys } from '@/lib/plan';
 
 beforeAll(() => {
   execSync('npx prisma migrate deploy', { env: process.env, stdio: 'inherit' });
@@ -60,7 +60,7 @@ describe('listCookedHistory', () => {
     const { household: householdA, owner: ownerA } = await makeHousehold('B');
     const meal = await createMeal(householdA.id, ownerA.id, { name: 'A Meal', note: '', tagIds: [], category: 'main' });
     await prisma.planEntry.create({
-      data: { householdId: householdA.id, date: new Date(toDateKey(new Date())), category: 'main', mealId: meal.id, status: 'cooked' },
+      data: { householdId: householdA.id, date: new Date(localDateKey(new Date())), category: 'main', mealId: meal.id, status: 'cooked' },
     });
 
     const { household: householdB } = await makeHousehold('C');

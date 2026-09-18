@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { getWeekDateKeys, getFutureWeekDateKeys, toDateKey } from '@/lib/plan';
+import { getWeekDateKeys, getFutureWeekDateKeys, localDateKey, toDateKey } from '@/lib/plan';
 
 describe('toDateKey', () => {
   it('formats a Date as YYYY-MM-DD', () => {
     expect(toDateKey(new Date('2026-09-08T15:30:00Z'))).toBe('2026-09-08');
+  });
+});
+
+describe('localDateKey', () => {
+  it('formats a locally-constructed Date using local calendar parts', () => {
+    expect(localDateKey(new Date(2026, 8, 7))).toBe('2026-09-07');
+    expect(localDateKey(new Date(2026, 0, 5))).toBe('2026-01-05');
   });
 });
 
@@ -27,6 +34,15 @@ describe('getWeekDateKeys', () => {
 
   it('returns the same week when given a Monday', () => {
     expect(getWeekDateKeys(new Date('2026-09-07T00:00:00Z'))[0]).toBe('2026-09-07');
+  });
+
+  it('computes the week from the local calendar date, not UTC', () => {
+    // Local Monday 00:00. In Europe/Budapest (UTC+2) that instant is Sunday
+    // 22:00 UTC, so a UTC-based implementation returns the PREVIOUS week.
+    expect(getWeekDateKeys(new Date(2026, 8, 7))).toEqual([
+      '2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10',
+      '2026-09-11', '2026-09-12', '2026-09-13',
+    ]);
   });
 });
 
@@ -65,5 +81,12 @@ describe('getFutureWeekDateKeys', () => {
     expect(getFutureWeekDateKeys(monday, thursday)).toEqual([
       '2026-09-10', '2026-09-11', '2026-09-12', '2026-09-13',
     ]);
+  });
+
+  it('filters on the local calendar date', () => {
+    const localMonday = new Date(2026, 8, 7);
+    expect(getFutureWeekDateKeys(localMonday, localMonday)).toHaveLength(7);
+    const localSunday = new Date(2026, 8, 13);
+    expect(getFutureWeekDateKeys(localSunday, localSunday)).toEqual(['2026-09-13']);
   });
 });

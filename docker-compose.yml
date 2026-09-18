@@ -27,6 +27,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       NODE_ENV: production
+      TZ: ${TZ:-Europe/Budapest}
     ports:
       - '3000:3000'
 

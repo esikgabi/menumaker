@@ -9,5 +9,8 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // ponytail: unit date tests need a deterministic timezone; Europe/Budapest
+    // (east of UTC) is what the product targets and exposes UTC-based "today" bugs.
+    env: { TZ: 'Europe/Budapest' },
   },
 });

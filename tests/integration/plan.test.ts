@@ -7,6 +7,7 @@ import {
   getWeekDateKeys,
   getOrCreateWeekPlan,
   generateAndSaveWeeklyPlan,
+  localDateKey,
   setPlanEntryMeal,
   transitionPastPlannedEntries,
   toDateKey,
@@ -223,7 +224,7 @@ describe('setPlanEntryMeal', () => {
 describe('transitionPastPlannedEntries', () => {
   it('marks a past planned entry with a meal as cooked', async () => {
     const { household, meals } = await makeHouseholdWithMeals('H', ['Meal 1']);
-    const pastDateKey = toDateKey(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000));
+    const pastDateKey = localDateKey(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000));
     await prisma.planEntry.create({
       data: { householdId: household.id, date: new Date(pastDateKey), category: 'main', mealId: meals[0].id, status: 'planned' },
     });
@@ -238,7 +239,7 @@ describe('transitionPastPlannedEntries', () => {
 
   it('marks a past planned entry with no meal as skipped', async () => {
     const { household } = await makeHouseholdWithMeals('I', []);
-    const pastDateKey = toDateKey(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000));
+    const pastDateKey = localDateKey(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000));
     await prisma.planEntry.create({
       data: { householdId: household.id, date: new Date(pastDateKey), category: 'main', status: 'planned' },
     });
