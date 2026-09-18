@@ -84,10 +84,26 @@ describe('meal CRUD and household isolation', () => {
     await createMeal(household.id, owner.id, { name: 'Healthy Meal', note: '', tagIds: [healthyTag!.id], category: 'main' });
     await createMeal(household.id, owner.id, { name: 'Fast Meal', note: '', tagIds: [fastTag!.id], category: 'main' });
 
-    const healthyMeals = await listMeals(household.id, healthyTag!.id);
+    const healthyMeals = await listMeals(household.id, [healthyTag!.id]);
 
     expect(healthyMeals).toHaveLength(1);
     expect(healthyMeals[0].name).toBe('Healthy Meal');
+  });
+
+  it('filters meals by multiple tags with OR semantics', async () => {
+    const household = await makeHousehold('R');
+    const owner = (await prisma.user.findFirst({ where: { householdId: household.id } }))!;
+    const tagA = await createTag(household.id, 'tag a');
+    const tagB = await createTag(household.id, 'tag b');
+
+    await createMeal(household.id, owner.id, { name: 'Meal A', note: '', tagIds: [tagA!.id], category: 'main' });
+    await createMeal(household.id, owner.id, { name: 'Meal B', note: '', tagIds: [tagB!.id], category: 'main' });
+    await createMeal(household.id, owner.id, { name: 'Untagged Meal', note: '', tagIds: [], category: 'main' });
+
+    const meals = await listMeals(household.id, [tagA!.id, tagB!.id]);
+
+    expect(meals).toHaveLength(2);
+    expect(meals.map((m) => m.name).sort()).toEqual(['Meal A', 'Meal B']);
   });
 
   it('rejects updating a meal that belongs to a different household', async () => {

@@ -11,11 +11,11 @@ export const mealInputSchema = z.object({
 
 export type MealInput = z.infer<typeof mealInputSchema>;
 
-export async function listMeals(householdId: string, tagId?: string, category?: 'soup' | 'main') {
+export async function listMeals(householdId: string, tagIds?: string[], category?: 'soup' | 'main') {
   return prisma.meal.findMany({
     where: {
       householdId,
-      ...(tagId ? { tags: { some: { tagId } } } : {}),
+      ...(tagIds && tagIds.length > 0 ? { tags: { some: { tagId: { in: tagIds } } } } : {}),
       ...(category ? { category } : {}),
     },
     include: { tags: { include: { tag: true } } },

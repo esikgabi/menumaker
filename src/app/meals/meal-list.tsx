@@ -21,12 +21,12 @@ type Meal = { id: string; name: string; note: string | null; category: 'soup' | 
 export function MealList({
   meals,
   allTags,
-  activeTag,
+  activeTagIds,
   activeCategory,
 }: {
   meals: Meal[];
   allTags: Tag[];
-  activeTag?: string;
+  activeTagIds: string[];
   activeCategory?: string;
 }) {
   const t = useTranslations('Meals');
@@ -34,9 +34,9 @@ export function MealList({
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
-  function buildUrl(nextTag?: string, nextCategory?: string) {
+  function buildUrl(nextTagIds: string[], nextCategory?: string) {
     const params = new URLSearchParams();
-    if (nextTag) params.set('tag', nextTag);
+    nextTagIds.forEach((id) => params.append('tag', id));
     if (nextCategory) params.set('category', nextCategory);
     const query = params.toString();
     return query ? `/meals?${query}` : '/meals';
@@ -46,25 +46,30 @@ export function MealList({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Select
-            value={activeTag ?? 'all'}
-            onValueChange={(value) => router.push(buildUrl(value === 'all' ? undefined : value, activeCategory))}
-          >
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allTags')}</SelectItem>
-              {allTags.map((tag) => (
-                <SelectItem key={tag.id} value={tag.id}>
-                  {tag.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            {allTags.map((tag) => (
+              <Badge
+                key={tag.id}
+                variant={activeTagIds.includes(tag.id) ? 'default' : 'outline'}
+                className="cursor-pointer"
+                onClick={() =>
+                  router.push(
+                    buildUrl(
+                      activeTagIds.includes(tag.id)
+                        ? activeTagIds.filter((id) => id !== tag.id)
+                        : [...activeTagIds, tag.id],
+                      activeCategory,
+                    ),
+                  )
+                }
+              >
+                {tag.name}
+              </Badge>
+            ))}
+          </div>
           <Select
             value={activeCategory ?? 'all'}
-            onValueChange={(value) => router.push(buildUrl(activeTag, value === 'all' ? undefined : value))}
+            onValueChange={(value) => router.push(buildUrl(activeTagIds, value === 'all' ? undefined : value))}
           >
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue />

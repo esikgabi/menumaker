@@ -6,7 +6,7 @@ import { MealList } from './meal-list';
 export default async function MealsPage({
   searchParams,
 }: {
-  searchParams: { tag?: string; category?: string };
+  searchParams: { tag?: string | string[]; category?: string };
 }) {
   const session = await requireHousehold();
   const householdId = session.user.householdId!;
@@ -14,8 +14,14 @@ export default async function MealsPage({
 
   const category = searchParams.category === 'soup' || searchParams.category === 'main' ? searchParams.category : undefined;
 
+  const activeTagIds = searchParams.tag
+    ? Array.isArray(searchParams.tag)
+      ? searchParams.tag
+      : [searchParams.tag]
+    : [];
+
   const [meals, tags] = await Promise.all([
-    listMeals(householdId, searchParams.tag, category),
+    listMeals(householdId, activeTagIds, category),
     listTags(householdId),
   ]);
 
@@ -31,7 +37,7 @@ export default async function MealsPage({
           tags: m.tags.map((mt) => ({ id: mt.tag.id, name: mt.tag.name })),
         }))}
         allTags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
-        activeTag={searchParams.tag}
+        activeTagIds={activeTagIds}
         activeCategory={category}
       />
     </div>
