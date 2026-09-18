@@ -89,4 +89,19 @@ describe('listCookedHistory', () => {
     const categories = weeks[0].entries.map((e: (typeof weeks)[number]['entries'][number]) => e.category).sort();
     expect(categories).toEqual(['main', 'soup']);
   });
+
+  it('excludes cooked entries whose meal was deleted', async () => {
+    const { household, owner } = await makeHousehold('E');
+    const meal = await createMeal(household.id, owner.id, { name: 'Doomed Meal', note: '', tagIds: [], category: 'main' });
+    const thisWeek = getWeekDateKeys(new Date());
+
+    await prisma.planEntry.create({
+      data: { householdId: household.id, date: new Date(thisWeek[0]), category: 'main', mealId: meal.id, status: 'cooked' },
+    });
+    await prisma.meal.delete({ where: { id: meal.id } }); // ON DELETE SET NULL -> mealId null
+
+    const weeks = await listCookedHistory(household.id);
+
+    expect(weeks).toHaveLength(0);
+  });
 });
