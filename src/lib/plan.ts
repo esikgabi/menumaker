@@ -224,11 +224,13 @@ export async function setPlanEntryMeal(
 
 /** Returns cooked PlanEntry rows for a household, grouped by Monday-start week, most recent week first. */
 export async function listCookedHistory(householdId: string) {
-  const entries = await prisma.planEntry.findMany({
-    where: { householdId, status: 'cooked' },
-    include: { meal: { include: { tags: { include: { tag: true } } } } },
-    orderBy: { date: 'desc' },
-  });
+  const entries = (
+    await prisma.planEntry.findMany({
+      where: { householdId, status: 'cooked' },
+      include: { meal: { include: { tags: { include: { tag: true } } } } },
+      orderBy: { date: 'desc' },
+    })
+  ).filter((e) => e.meal !== null); // deleting a meal nulls the FK (ON DELETE SET NULL); don't render anonymous history rows
 
   const weekMap = new Map<string, typeof entries>();
   for (const entry of entries) {
