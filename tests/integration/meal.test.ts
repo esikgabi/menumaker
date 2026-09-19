@@ -170,10 +170,13 @@ describe('meal CRUD and household isolation', () => {
     await createMeal(household.id, owner.id, { name: 'Soup Meal', note: '', tagIds: [], category: 'soup' });
     await createMeal(household.id, owner.id, { name: 'Main Meal', note: '', tagIds: [], category: 'main' });
 
-    const soupMeals = await listMeals(household.id, undefined, 'soup');
-
+    const soupMeals = await listMeals(household.id, undefined, ['soup']);
     expect(soupMeals).toHaveLength(1);
     expect(soupMeals[0].name).toBe('Soup Meal');
+
+    // OR semantics: selecting both categories returns both meals
+    const both = await listMeals(household.id, undefined, ['main', 'soup']);
+    expect(both).toHaveLength(2);
   });
 });
 

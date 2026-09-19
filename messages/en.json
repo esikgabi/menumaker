@@ -38,8 +38,7 @@
     "noMeals": "No meals yet. Add your first meal to get started.",
     "categoryLabel": "Category",
     "categorySoup": "Soup",
-    "categoryMain": "Main",
-    "allCategories": "All categories"
+    "categoryMain": "Main"
   },
   "Plan": {
     "title": "Weekly Plan",
