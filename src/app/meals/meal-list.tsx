@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -45,27 +46,30 @@ export function MealList({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <div className="flex flex-wrap gap-2">
-            {allTags.map((tag) => (
-              <Badge
-                key={tag.id}
-                variant={activeTagIds.includes(tag.id) ? 'default' : 'outline'}
-                className="cursor-pointer"
-                onClick={() =>
-                  router.push(
-                    buildUrl(
-                      activeTagIds.includes(tag.id)
-                        ? activeTagIds.filter((id) => id !== tag.id)
-                        : [...activeTagIds, tag.id],
-                      activeCategory,
-                    ),
-                  )
-                }
-              >
-                {tag.name}
-              </Badge>
-            ))}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-1">
+            <Label className="text-sm text-muted-foreground">{t('tagsLabel')}</Label>
+            <div className="flex flex-wrap gap-2">
+              {allTags.map((tag) => (
+                <Badge
+                  key={tag.id}
+                  variant={activeTagIds.includes(tag.id) ? 'default' : 'outline'}
+                  className="cursor-pointer"
+                  onClick={() =>
+                    router.push(
+                      buildUrl(
+                        activeTagIds.includes(tag.id)
+                          ? activeTagIds.filter((id) => id !== tag.id)
+                          : [...activeTagIds, tag.id],
+                        activeCategory,
+                      ),
+                    )
+                  }
+                >
+                  {tag.name}
+                </Badge>
+              ))}
+            </div>
           </div>
           <Select
             value={activeCategory ?? 'all'}
