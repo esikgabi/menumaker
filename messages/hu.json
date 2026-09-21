@@ -35,12 +35,10 @@
     "save": "Mentés",
     "delete": "Törlés",
     "cancel": "Mégse",
-    "allTags": "Minden címke",
     "noMeals": "Még nincs étel. Adj hozzá egyet a kezdéshez.",
     "categoryLabel": "Kategória",
     "categorySoup": "Leves",
-    "categoryMain": "Főétel",
-    "allCategories": "Minden kategória"
+    "categoryMain": "Főétel"
   },
   "Plan": {
     "title": "Heti menü",
