@@ -42,7 +42,13 @@ export function getFutureWeekDateKeys(reference: Date, today: Date = reference):
   return getWeekDateKeys(reference).filter((k) => k >= todayKey);
 }
 
-export type PlanMeal = { id: string; name: string; tags: string[] };
+/** 0=Mon..6=Sun, matching Household.activeWeekdays and getWeekDateKeys' ordering. */
+function weekdayIndexOfDateKey(dateKey: string): number {
+  const jsDay = new Date(`${dateKey}T00:00:00Z`).getUTCDay(); // 0=Sun..6=Sat
+  return (jsDay + 6) % 7; // convert to 0=Mon..6=Sun
+}
+
+export type PlanMeal = { id: string; name: string; tags: string[]; durationDays?: number };
 export type CookedHistoryEntry = { mealId: string; dateKey: string };
 
 const AVOID_REPEAT_WEEKS = 3;
@@ -89,17 +95,30 @@ export function generateWeeklyPlan(input: {
     return a.name.localeCompare(b.name);
   });
 
-  const notEnoughMeals = meals.length < weekDateKeys.length;
-
-  // No repeats while distinct candidates remain, then cycle.
-  const assignedMealIds: string[] = [];
-  for (let i = 0; i < weekDateKeys.length; i++) {
+  // Walk the days in order; when a meal is newly picked, it fills its own
+  // durationDays consecutive slots (clamped to the remaining days) before the
+  // next ranked, not-yet-used meal is picked. weekDateKeys is expected to
+  // already be "active days only" — the caller (generateAndSaveWeeklyPlan)
+  // filters out skipped days before calling this function, so duration never
+  // spans a day that isn't actually in this array.
+  const assignedMealIds: (string | null)[] = new Array(weekDateKeys.length).fill(null);
+  let picksNeeded = 0;
+  let i = 0;
+  while (i < weekDateKeys.length) {
     const unused = ranked.find((m) => !assignedMealIds.includes(m.id));
-    assignedMealIds.push(unused ? unused.id : ranked[i % ranked.length].id);
+    const chosen = unused ?? ranked[picksNeeded % ranked.length];
+    picksNeeded += 1;
+    const span = Math.max(1, chosen.durationDays ?? 1);
+    for (let j = i; j < Math.min(i + span, weekDateKeys.length); j++) {
+      assignedMealIds[j] = chosen.id;
+    }
+    i += span;
   }
 
+  const notEnoughMeals = picksNeeded > meals.length;
+
   return {
-    assignments: weekDateKeys.map((dateKey, i) => ({ dateKey, mealId: assignedMealIds[i] })),
+    assignments: weekDateKeys.map((dateKey, idx) => ({ dateKey, mealId: assignedMealIds[idx] })),
     notEnoughMeals,
   };
 }
@@ -121,14 +140,16 @@ export async function transitionPastPlannedEntries(householdId: string) {
 
 const MEAL_CATEGORIES = ['main', 'soup'] as const;
 
-/** Ensures a main and soup PlanEntry row exists for every date key in the week, then returns them with meal+tags included. */
+/** Ensures a main and soup PlanEntry row exists for every ACTIVE date key in the week, then returns them with meal+tags included. Inactive days (per household pattern or a one-off override) get no rows. */
 export async function getOrCreateWeekPlan(householdId: string, weekDateKeys: string[]) {
+  const activeDateKeys = await resolveActiveDateKeys(householdId, weekDateKeys);
+
   const existing = await prisma.planEntry.findMany({
-    where: { householdId, date: { in: weekDateKeys.map((k) => new Date(k)) } },
+    where: { householdId, date: { in: activeDateKeys.map((k) => new Date(k)) } },
   });
   const existingKeys = new Set(existing.map((e) => `${toDateKey(e.date)}:${e.category}`));
 
-  const missing = weekDateKeys.flatMap((dateKey) =>
+  const missing = activeDateKeys.flatMap((dateKey) =>
     MEAL_CATEGORIES.filter((category) => !existingKeys.has(`${dateKey}:${category}`)).map((category) => ({
       householdId,
       date: new Date(dateKey),
@@ -144,7 +165,7 @@ export async function getOrCreateWeekPlan(householdId: string, weekDateKeys: str
   }
 
   return prisma.planEntry.findMany({
-    where: { householdId, date: { in: weekDateKeys.map((k) => new Date(k)) } },
+    where: { householdId, date: { in: activeDateKeys.map((k) => new Date(k)) } },
     include: { meal: { include: { tags: { include: { tag: true } } } } },
     orderBy: [{ date: 'asc' }, { category: 'asc' }],
   });
@@ -164,15 +185,19 @@ export async function generateAndSaveWeeklyPlan(householdId: string, weekDateKey
 
   await getOrCreateWeekPlan(householdId, weekDateKeys); // ensure rows exist first
 
+  // Duration-spanning must walk active days only — a skipped day must not
+  // consume a slot of a multi-day meal (see resolveActiveDateKeys).
+  const activeDateKeys = await resolveActiveDateKeys(householdId, weekDateKeys);
+
   const editableEntries = await prisma.planEntry.findMany({
-    where: { householdId, date: { in: weekDateKeys.map((k) => new Date(k)) }, status: { not: 'cooked' } },
+    where: { householdId, date: { in: activeDateKeys.map((k) => new Date(k)) }, status: { not: 'cooked' } },
   });
   const editableKeys = new Set(editableEntries.map((e) => `${toDateKey(e.date)}:${e.category}`));
 
   const updates = MEAL_CATEGORIES.flatMap((category) => {
     const categoryMeals: PlanMeal[] = meals
       .filter((m) => m.category === category)
-      .map((m) => ({ id: m.id, name: m.name, tags: m.tags.map((mt) => mt.tag.name) }));
+      .map((m) => ({ id: m.id, name: m.name, tags: m.tags.map((mt) => mt.tag.name), durationDays: m.durationDays }));
     const categoryCookedHistory: CookedHistoryEntry[] = cookedEntries
       .filter((e) => e.meal?.category === category)
       .map((e) => ({ mealId: e.mealId!, dateKey: toDateKey(e.date) }));
@@ -180,7 +205,7 @@ export async function generateAndSaveWeeklyPlan(householdId: string, weekDateKey
     const { assignments } = generateWeeklyPlan({
       meals: categoryMeals,
       cookedHistory: categoryCookedHistory,
-      weekDateKeys,
+      weekDateKeys: activeDateKeys,
     });
 
     return assignments
@@ -267,4 +292,44 @@ export async function listCookedHistory(householdId: string) {
       weekStartKey,
       days: groupByDay(weekEntries),
     }));
+}
+
+/** Pure merge: a date key is active if it has no override, or its override says so. */
+export function mergeActiveDateKeys(
+  weekDateKeys: string[],
+  activeWeekdays: number[],
+  overridesByDateKey: Map<string, boolean>,
+): string[] {
+  return weekDateKeys.filter((dateKey) => {
+    const override = overridesByDateKey.get(dateKey);
+    if (override !== undefined) return override;
+    return activeWeekdays.includes(weekdayIndexOfDateKey(dateKey));
+  });
+}
+
+/** Resolves which of `weekDateKeys` need a menu for this household: household pattern, overridden per-date. */
+export async function resolveActiveDateKeys(householdId: string, weekDateKeys: string[]): Promise<string[]> {
+  const [household, overrides] = await Promise.all([
+    prisma.household.findUniqueOrThrow({ where: { id: householdId }, select: { activeWeekdays: true } }),
+    prisma.planDayOverride.findMany({
+      where: { householdId, date: { in: weekDateKeys.map((k) => new Date(k)) } },
+    }),
+  ]);
+
+  const overridesByDateKey = new Map(overrides.map((o) => [toDateKey(o.date), o.active]));
+  return mergeActiveDateKeys(weekDateKeys, household.activeWeekdays, overridesByDateKey);
+}
+
+/** Sets or clears (active: null) a one-off day override, scoped to the caller's household. */
+export async function setPlanDayOverride(householdId: string, dateKey: string, active: boolean | null) {
+  if (active === null) {
+    await prisma.planDayOverride.deleteMany({ where: { householdId, date: new Date(dateKey) } });
+    return;
+  }
+
+  await prisma.planDayOverride.upsert({
+    where: { householdId_date: { householdId, date: new Date(dateKey) } },
+    update: { active },
+    create: { householdId, date: new Date(dateKey), active },
+  });
 }

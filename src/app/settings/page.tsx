@@ -26,6 +26,7 @@ export default async function SettingsPage() {
         currentUserId={session.user.id}
         members={members}
         tags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
+        activeWeekdays={household.activeWeekdays}
       />
     </div>
   );

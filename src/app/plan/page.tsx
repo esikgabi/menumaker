@@ -1,6 +1,6 @@
 import { requireHousehold } from '@/lib/session';
 import { listMeals } from '@/lib/meal';
-import { getWeekDateKeys, getFutureWeekDateKeys, getOrCreateWeekPlan, transitionPastPlannedEntries, toDateKey } from '@/lib/plan';
+import { getWeekDateKeys, getFutureWeekDateKeys, getOrCreateWeekPlan, transitionPastPlannedEntries, toDateKey, resolveActiveDateKeys } from '@/lib/plan';
 import { getTranslations } from 'next-intl/server';
 import { PlanView } from './plan-view';
 
@@ -15,6 +15,8 @@ export default async function PlanPage() {
 
   const fullWeek = getWeekDateKeys(new Date());
   const futureWeek = getFutureWeekDateKeys(new Date());
+  const activeFutureWeek = await resolveActiveDateKeys(householdId, futureWeek);
+  const activeSet = new Set(activeFutureWeek);
   const [entries, meals] = await Promise.all([
     getOrCreateWeekPlan(householdId, futureWeek),
     listMeals(householdId),
@@ -31,6 +33,7 @@ export default async function PlanPage() {
     return {
       dateKey,
       dayName: t(DAY_NAME_KEYS[dayIndex]),
+      active: activeSet.has(dateKey),
       main: {
         mealId: mainEntry?.mealId ?? null,
         mealName: mainEntry?.meal?.name ?? null,

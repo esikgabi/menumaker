@@ -1,13 +1,15 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { execSync } from 'child_process';
 import { prisma } from '@/lib/prisma';
-import { createHouseholdWithOwner } from '@/lib/household';
+import { createHouseholdWithOwner, updateActiveWeekdays } from '@/lib/household';
 import { createMeal } from '@/lib/meal';
 import {
   getWeekDateKeys,
   getOrCreateWeekPlan,
   generateAndSaveWeeklyPlan,
   localDateKey,
+  resolveActiveDateKeys,
+  setPlanDayOverride,
   setPlanEntryMeal,
   transitionPastPlannedEntries,
   toDateKey,
@@ -18,6 +20,7 @@ beforeAll(() => {
 });
 
 beforeEach(async () => {
+  await prisma.planDayOverride.deleteMany();
   await prisma.planEntry.deleteMany();
   await prisma.mealTag.deleteMany();
   await prisma.meal.deleteMany();
@@ -265,5 +268,138 @@ describe('transitionPastPlannedEntries', () => {
       where: { householdId_date_category: { householdId: household.id, date: new Date(futureDateKey), category: 'main' } },
     });
     expect(entry?.status).toBe('planned');
+  });
+});
+
+describe('resolveActiveDateKeys', () => {
+  it('returns every date key when the household has the default all-days pattern', async () => {
+    const { household } = await makeHouseholdWithMeals('ACT1', []);
+    const week = getWeekDateKeys(new Date());
+
+    const active = await resolveActiveDateKeys(household.id, week);
+
+    expect(active).toEqual(week);
+  });
+
+  it('excludes date keys whose weekday is not in the household pattern', async () => {
+    const { household } = await makeHouseholdWithMeals('ACT2', []);
+    const week = getWeekDateKeys(new Date()); // Monday..Sunday
+    await updateActiveWeekdays(household.id, [0, 1, 2, 3, 4]); // Mon-Fri only
+
+    const active = await resolveActiveDateKeys(household.id, week);
+
+    expect(active).toEqual(week.slice(0, 5));
+  });
+
+  it('a one-off override forcing a day off wins over the pattern saying on', async () => {
+    const { household } = await makeHouseholdWithMeals('ACT3', []);
+    const week = getWeekDateKeys(new Date());
+    await setPlanDayOverride(household.id, week[2], false);
+
+    const active = await resolveActiveDateKeys(household.id, week);
+
+    expect(active).not.toContain(week[2]);
+    expect(active).toHaveLength(6);
+  });
+
+  it('a one-off override forcing a day on wins over the pattern saying off', async () => {
+    const { household } = await makeHouseholdWithMeals('ACT4', []);
+    const week = getWeekDateKeys(new Date());
+    await updateActiveWeekdays(household.id, [0, 1, 2, 3, 4]); // Sat/Sun off by pattern
+    await setPlanDayOverride(household.id, week[5], true); // force Saturday on
+
+    const active = await resolveActiveDateKeys(household.id, week);
+
+    expect(active).toContain(week[5]);
+    expect(active).not.toContain(week[6]);
+  });
+
+  it('clearing an override (active: null) reverts to the pattern default', async () => {
+    const { household } = await makeHouseholdWithMeals('ACT5', []);
+    const week = getWeekDateKeys(new Date());
+    await setPlanDayOverride(household.id, week[0], false);
+    await setPlanDayOverride(household.id, week[0], null);
+
+    const active = await resolveActiveDateKeys(household.id, week);
+
+    expect(active).toContain(week[0]);
+  });
+});
+
+describe('getOrCreateWeekPlan with active-day filtering', () => {
+  it('creates no rows for a day excluded by the household active-weekdays pattern', async () => {
+    const { household } = await makeHouseholdWithMeals('ACT6', []);
+    const week = getWeekDateKeys(new Date());
+    await updateActiveWeekdays(household.id, [0, 1, 2, 3, 4]); // Mon-Fri only
+
+    const entries = await getOrCreateWeekPlan(household.id, week);
+
+    const entryDateKeys = new Set(entries.map((e) => toDateKey(e.date)));
+    expect(entryDateKeys.has(week[5])).toBe(false); // Saturday
+    expect(entryDateKeys.has(week[6])).toBe(false); // Sunday
+    expect(entries).toHaveLength(10); // 5 active days x 2 categories
+  });
+
+  it('creates no rows for a day excluded by a one-off override', async () => {
+    const { household } = await makeHouseholdWithMeals('ACT7', []);
+    const week = getWeekDateKeys(new Date());
+    await setPlanDayOverride(household.id, week[2], false);
+
+    const entries = await getOrCreateWeekPlan(household.id, week);
+
+    const entryDateKeys = new Set(entries.map((e) => toDateKey(e.date)));
+    expect(entryDateKeys.has(week[2])).toBe(false);
+    expect(entries).toHaveLength(12); // 6 active days x 2 categories
+  });
+});
+
+describe('generateAndSaveWeeklyPlan with active-day filtering', () => {
+  it('does not assign a meal to a day excluded by the active-weekdays pattern', async () => {
+    const { household } = await makeHouseholdWithMeals('ACT8', ['Meal 1', 'Meal 2']);
+    const week = getWeekDateKeys(new Date());
+    await updateActiveWeekdays(household.id, [0, 1, 2, 3, 4]);
+
+    await generateAndSaveWeeklyPlan(household.id, week);
+
+    const entries = await getOrCreateWeekPlan(household.id, week);
+    expect(entries.some((e) => toDateKey(e.date) === week[5])).toBe(false);
+  });
+
+  it('assigns a multi-day meal to consecutive active PlanEntry rows', async () => {
+    const { household, owner } = await makeHouseholdWithMeals('ACT9', []);
+    const stew = await createMeal(household.id, owner.id, { name: 'Stew', note: '', tagIds: [], category: 'main', durationDays: 2 });
+    const week = getWeekDateKeys(new Date());
+
+    await generateAndSaveWeeklyPlan(household.id, week);
+
+    const mainEntries = (await getOrCreateWeekPlan(household.id, week))
+      .filter((e) => e.category === 'main')
+      .sort((a, b) => toDateKey(a.date).localeCompare(toDateKey(b.date)));
+    expect(mainEntries[0].mealId).toBe(stew.id);
+    expect(mainEntries[1].mealId).toBe(stew.id);
+  });
+
+  it('carries a multi-day meal over a skipped weekday instead of wasting a duration slot on it', async () => {
+    const { household, owner } = await makeHouseholdWithMeals('ACT10', []);
+    const stew = await createMeal(household.id, owner.id, { name: 'AAA Stew', note: '', tagIds: [], category: 'main', durationDays: 3 });
+    await createMeal(household.id, owner.id, { name: 'M2', note: '', tagIds: [], category: 'main', durationDays: 1 });
+    await createMeal(household.id, owner.id, { name: 'M3', note: '', tagIds: [], category: 'main', durationDays: 1 });
+    const week = getWeekDateKeys(new Date());
+    // Turn off Wednesday (index 2). Stew picked Mon+Tue should land its 3rd
+    // day on Thursday (the next *active* day), not be wasted on Wednesday —
+    // which would bump every following pick one day earlier than correct.
+    await updateActiveWeekdays(household.id, [0, 1, 3, 4, 5, 6]);
+
+    await generateAndSaveWeeklyPlan(household.id, week);
+
+    const mainEntries = (await getOrCreateWeekPlan(household.id, week))
+      .filter((e) => e.category === 'main')
+      .sort((a, b) => toDateKey(a.date).localeCompare(toDateKey(b.date)));
+    const byKey = new Map(mainEntries.map((e) => [toDateKey(e.date), e.mealId]));
+
+    expect(byKey.has(week[2])).toBe(false); // Wednesday has no row at all
+    expect(byKey.get(week[0])).toBe(stew.id); // Monday: Stew day 1
+    expect(byKey.get(week[1])).toBe(stew.id); // Tuesday: Stew day 2
+    expect(byKey.get(week[3])).toBe(stew.id); // Thursday: Stew day 3, carried over Wednesday
   });
 });

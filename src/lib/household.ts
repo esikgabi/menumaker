@@ -30,6 +30,11 @@ export async function joinHouseholdByInviteCode(inviteCode: string, userId: stri
 
 export const householdNameSchema = z.string().trim().min(1).max(100);
 
+export const activeWeekdaysSchema = z
+  .array(z.number().int().min(0).max(6))
+  .min(1)
+  .refine((days) => new Set(days).size === days.length, 'Duplicate weekday');
+
 // ponytail: renameHousehold and leaveHousehold below do not check the
 // household/user exists first; every real caller derives these ids from an
 // authenticated session (requireHousehold()) where they're already
@@ -37,6 +42,11 @@ export const householdNameSchema = z.string().trim().min(1).max(100);
 // unvalidated input.
 export async function renameHousehold(householdId: string, name: string) {
   return prisma.household.update({ where: { id: householdId }, data: { name } });
+}
+
+export async function updateActiveWeekdays(householdId: string, weekdays: number[]) {
+  const parsed = activeWeekdaysSchema.parse(weekdays);
+  return prisma.household.update({ where: { id: householdId }, data: { activeWeekdays: parsed } });
 }
 
 export async function getHousehold(householdId: string) {

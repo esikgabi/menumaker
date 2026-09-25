@@ -61,4 +61,31 @@ describe('mealInputSchema', () => {
     const result = mealInputSchema.safeParse({ name: 'X', tagIds: [], category: 'dessert' });
     expect(result.success).toBe(false);
   });
+
+  it('defaults durationDays to 1 when omitted', () => {
+    const result = mealInputSchema.safeParse({ name: 'X', tagIds: [], category: 'main' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.durationDays).toBe(1);
+  });
+
+  it('accepts an explicit durationDays', () => {
+    const result = mealInputSchema.safeParse({ name: 'X', tagIds: [], category: 'main', durationDays: 3 });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.durationDays).toBe(3);
+  });
+
+  it('rejects durationDays of 0', () => {
+    const result = mealInputSchema.safeParse({ name: 'X', tagIds: [], category: 'main', durationDays: 0 });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a negative durationDays', () => {
+    const result = mealInputSchema.safeParse({ name: 'X', tagIds: [], category: 'main', durationDays: -1 });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a non-integer durationDays', () => {
+    const result = mealInputSchema.safeParse({ name: 'X', tagIds: [], category: 'main', durationDays: 1.5 });
+    expect(result.success).toBe(false);
+  });
 });

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { requireHousehold } from '@/lib/session';
-import { householdNameSchema, renameHousehold, leaveHousehold } from '@/lib/household';
+import { householdNameSchema, renameHousehold, leaveHousehold, updateActiveWeekdays } from '@/lib/household';
 import { createTag, renameTag, deleteTag } from '@/lib/meal';
 
 export async function renameHouseholdAction(formData: FormData) {
@@ -38,4 +38,11 @@ export async function deleteTagAction(tagId: string) {
   if (!result) throw new Error('Tag not found or not in your household');
   revalidatePath('/settings');
   revalidatePath('/meals');
+}
+
+export async function updateActiveWeekdaysAction(weekdays: number[]) {
+  const session = await requireHousehold();
+  await updateActiveWeekdays(session.user.householdId!, weekdays);
+  revalidatePath('/settings');
+  revalidatePath('/plan');
 }

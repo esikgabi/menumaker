@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getWeekDateKeys, getFutureWeekDateKeys, localDateKey, toDateKey } from '@/lib/plan';
+import { getWeekDateKeys, getFutureWeekDateKeys, localDateKey, mergeActiveDateKeys, toDateKey } from '@/lib/plan';
 
 describe('toDateKey', () => {
   it('formats a Date as YYYY-MM-DD', () => {
@@ -88,5 +88,33 @@ describe('getFutureWeekDateKeys', () => {
     expect(getFutureWeekDateKeys(localMonday, localMonday)).toHaveLength(7);
     const localSunday = new Date(2026, 8, 13);
     expect(getFutureWeekDateKeys(localSunday, localSunday)).toEqual(['2026-09-13']);
+  });
+});
+
+describe('mergeActiveDateKeys', () => {
+  const week = ['2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11', '2026-09-12', '2026-09-13']; // Mon..Sun
+
+  it('returns every date key when the pattern includes every weekday and there are no overrides', () => {
+    const result = mergeActiveDateKeys(week, [0, 1, 2, 3, 4, 5, 6], new Map());
+    expect(result).toEqual(week);
+  });
+
+  it('excludes date keys whose weekday is not in the pattern', () => {
+    const result = mergeActiveDateKeys(week, [0, 1, 2, 3, 4], new Map()); // Mon-Fri only
+    expect(result).toEqual(week.slice(0, 5));
+  });
+
+  it('an override forcing a day off wins over the pattern saying that weekday is on', () => {
+    const overrides = new Map([[week[2], false]]); // Wednesday forced off
+    const result = mergeActiveDateKeys(week, [0, 1, 2, 3, 4, 5, 6], overrides);
+    expect(result).not.toContain(week[2]);
+    expect(result).toHaveLength(6);
+  });
+
+  it('an override forcing a day on wins over the pattern saying that weekday is off', () => {
+    const overrides = new Map([[week[5], true]]); // Saturday forced on
+    const result = mergeActiveDateKeys(week, [0, 1, 2, 3, 4], overrides); // Sat/Sun off by pattern
+    expect(result).toContain(week[5]);
+    expect(result).not.toContain(week[6]);
   });
 });

@@ -39,6 +39,7 @@ export default async function MealsPage({
           name: m.name,
           note: m.note,
           category: m.category,
+          durationDays: m.durationDays,
           tags: m.tags.map((mt) => ({ id: mt.tag.id, name: mt.tag.name })),
         }))}
         allTags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
