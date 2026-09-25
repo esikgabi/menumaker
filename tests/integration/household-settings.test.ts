@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { execSync } from 'child_process';
 import { prisma } from '@/lib/prisma';
-import { createHouseholdWithOwner, renameHousehold, listHouseholdMembers, leaveHousehold } from '@/lib/household';
+import { createHouseholdWithOwner, renameHousehold, listHouseholdMembers, leaveHousehold, updateActiveWeekdays } from '@/lib/household';
 
 beforeAll(() => {
   execSync('npx prisma migrate deploy', { env: process.env, stdio: 'inherit' });
@@ -82,5 +82,33 @@ describe('leaveHousehold', () => {
 
     const mealGone = await prisma.meal.findUnique({ where: { id: meal.id } });
     expect(mealGone).toBeNull();
+  });
+});
+
+describe('updateActiveWeekdays', () => {
+  it('defaults to all 7 weekdays for a new household', async () => {
+    const owner = await prisma.user.create({ data: { email: 'owner6@settings-test.example.com', name: 'Owner6' } });
+    const household = await createHouseholdWithOwner('Settings Test Household G', owner.id);
+
+    expect(household.activeWeekdays.sort()).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it('persists a restricted set of weekdays', async () => {
+    const owner = await prisma.user.create({ data: { email: 'owner7@settings-test.example.com', name: 'Owner7' } });
+    const household = await createHouseholdWithOwner('Settings Test Household H', owner.id);
+
+    const updated = await updateActiveWeekdays(household.id, [0, 1, 2, 3, 4]);
+
+    expect(updated.activeWeekdays.sort()).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it('rejects an empty array and leaves the existing value untouched', async () => {
+    const owner = await prisma.user.create({ data: { email: 'owner8@settings-test.example.com', name: 'Owner8' } });
+    const household = await createHouseholdWithOwner('Settings Test Household I', owner.id);
+
+    await expect(updateActiveWeekdays(household.id, [])).rejects.toThrow();
+
+    const unchanged = await prisma.household.findUnique({ where: { id: household.id } });
+    expect(unchanged?.activeWeekdays.sort()).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 });

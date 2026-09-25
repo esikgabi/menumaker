@@ -13,11 +13,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { generateWeekAction, overrideDayAction } from './actions';
+import { generateWeekAction, overrideDayAction, toggleDayOverrideAction } from './actions';
 
 type Meal = { id: string; name: string; tags: string[] };
 type SlotEntry = { mealId: string | null; mealName: string | null; tags: string[]; status: 'planned' | 'cooked' | 'skipped' };
-type DayEntry = { dateKey: string; dayName: string; main: SlotEntry; soup: SlotEntry };
+type DayEntry = { dateKey: string; dayName: string; active: boolean; main: SlotEntry; soup: SlotEntry };
 
 const NONE_VALUE = '__none__';
 
@@ -53,6 +53,11 @@ export function PlanView({
       setErrorKey(key);
       router.refresh();
     }
+  }
+
+  async function handleToggleDay(dateKey: string, currentlyActive: boolean) {
+    await toggleDayOverrideAction(dateKey, currentlyActive ? false : true);
+    router.refresh();
   }
 
   function renderSlot(dateKey: string, category: 'main' | 'soup', slot: SlotEntry, options: Meal[]) {
@@ -124,13 +129,22 @@ export function PlanView({
       <div className="flex flex-col gap-3">
         {days.map((day) => (
           <Card key={day.dateKey}>
-            <CardHeader className="pb-2">
+            <CardHeader className="flex-row items-center justify-between pb-2">
               <CardTitle className="text-base">{day.dayName}</CardTitle>
+              <Button variant="outline" size="sm" onClick={() => handleToggleDay(day.dateKey, day.active)}>
+                {day.active ? t('skipDay') : t('restoreDay')}
+              </Button>
             </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              {renderSlot(day.dateKey, 'main', day.main, mainMeals)}
-              {renderSlot(day.dateKey, 'soup', day.soup, soupMeals)}
-            </CardContent>
+            {day.active ? (
+              <CardContent className="flex flex-col gap-3">
+                {renderSlot(day.dateKey, 'main', day.main, mainMeals)}
+                {renderSlot(day.dateKey, 'soup', day.soup, soupMeals)}
+              </CardContent>
+            ) : (
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{t('dayOff')}</p>
+              </CardContent>
+            )}
           </Card>
         ))}
       </div>

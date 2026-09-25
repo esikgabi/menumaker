@@ -7,6 +7,7 @@ export const mealInputSchema = z.object({
   note: z.string().trim().max(500).optional().or(z.literal('')),
   tagIds: z.array(z.string()),
   category: z.enum(['soup', 'main']),
+  durationDays: z.coerce.number().int().min(1).default(1),
 });
 
 export type MealInput = z.infer<typeof mealInputSchema>;
@@ -45,6 +46,7 @@ export async function createMeal(householdId: string, createdById: string, input
       name: input.name,
       note: input.note || null,
       category: input.category,
+      durationDays: input.durationDays,
       tags: { create: tagIds.map((tagId) => ({ tagId })) },
     },
     include: { tags: { include: { tag: true } } },
@@ -67,6 +69,7 @@ export async function updateMeal(householdId: string, mealId: string, input: Mea
         name: input.name,
         note: input.note || null,
         category: input.category,
+        durationDays: input.durationDays,
         tags: { create: tagIds.map((tagId) => ({ tagId })) },
       },
       include: { tags: { include: { tag: true } } },

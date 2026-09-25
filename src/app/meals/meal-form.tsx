@@ -23,7 +23,7 @@ import {
 import { createMealAction, updateMealAction, createTagAction } from './actions';
 
 type Tag = { id: string; name: string };
-type Meal = { id: string; name: string; note: string | null; category: 'soup' | 'main'; tags: Tag[] };
+type Meal = { id: string; name: string; note: string | null; category: 'soup' | 'main'; durationDays: number; tags: Tag[] };
 
 export function MealForm({
   meal,
@@ -39,6 +39,7 @@ export function MealForm({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(meal?.tags.map((tg) => tg.id) ?? []);
   const [newTagName, setNewTagName] = useState('');
   const [category, setCategory] = useState<'soup' | 'main'>(meal?.category ?? 'main');
+  const [durationDays, setDurationDays] = useState(meal?.durationDays ?? 1);
 
   function toggleTag(tagId: string) {
     setSelectedTagIds((prev) =>
@@ -59,6 +60,7 @@ export function MealForm({
   async function handleSubmit(formData: FormData) {
     selectedTagIds.forEach((id) => formData.append('tagIds', id));
     formData.set('category', category);
+    formData.set('durationDays', String(durationDays));
     if (meal) {
       await updateMealAction(meal.id, formData);
     } else {
@@ -96,6 +98,19 @@ export function MealForm({
                 <SelectItem value="soup">{t('categorySoup')}</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="durationDays">{t('durationLabel')}</Label>
+            <Input
+              id="durationDays"
+              name="durationDays"
+              type="number"
+              min={1}
+              max={5}
+              value={durationDays}
+              onChange={(e) => setDurationDays(Math.max(1, Number(e.target.value) || 1))}
+            />
           </div>
 
           <div>

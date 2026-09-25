@@ -38,7 +38,8 @@
     "noMeals": "No meals yet. Add your first meal to get started.",
     "categoryLabel": "Category",
     "categorySoup": "Soup",
-    "categoryMain": "Main"
+    "categoryMain": "Main",
+    "durationLabel": "Lasts how many days"
   },
   "Plan": {
     "title": "Weekly Plan",
@@ -53,6 +54,9 @@
     "noneOption": "None",
     "statusCooked": "Cooked",
     "statusSkipped": "Skipped",
+    "dayOff": "No menu (day off)",
+    "skipDay": "Skip this day",
+    "restoreDay": "Add menu back",
     "monday": "Monday",
     "tuesday": "Tuesday",
     "wednesday": "Wednesday",
@@ -76,6 +80,8 @@
     "copied": "Copied!",
     "membersTitle": "Members",
     "tagsTitle": "Tags",
+    "activeDaysTitle": "Active days",
+    "activeDaysHint": "Choose which days you usually need a menu. You can still turn a specific day on or off for just this week from the Weekly Plan page.",
     "newTagPlaceholder": "New tag name",
     "addTag": "Add tag",
     "rename": "Rename",
