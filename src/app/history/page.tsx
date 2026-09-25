@@ -28,7 +28,8 @@ export default async function HistoryPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {week.days.map((day) => {
-              const dayIndex = (new Date(day.dateKey).getDay() + 6) % 7; // Mon=0..Sun=6
+              const [dayYear, dayMonth, dayNum] = day.dateKey.split('-').map(Number);
+              const dayIndex = (new Date(dayYear, dayMonth - 1, dayNum).getDay() + 6) % 7; // Mon=0..Sun=6
               return (
                 <div key={day.dateKey} className="flex flex-col gap-1.5 border-b pb-3 last:border-0 last:pb-0">
                   <span className="text-sm font-semibold">
