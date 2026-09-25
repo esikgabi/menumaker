@@ -222,7 +222,28 @@ export async function setPlanEntryMeal(
   });
 }
 
-/** Returns cooked PlanEntry rows for a household, grouped by Monday-start week, most recent week first. */
+const CATEGORY_ORDER = { soup: 0, main: 1 } as const;
+
+function groupByDay<T extends { date: Date; category: 'main' | 'soup' }>(entries: T[]) {
+  const dayMap = new Map<string, T[]>();
+  for (const entry of entries) {
+    const key = toDateKey(entry.date);
+    const existing = dayMap.get(key);
+    if (existing) existing.push(entry);
+    else dayMap.set(key, [entry]);
+  }
+
+  return [...dayMap.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0])) // most recent day first
+    .map(([dateKey, dayEntries]) => ({
+      dateKey,
+      entries: [...dayEntries].sort((a, b) => CATEGORY_ORDER[a.category] - CATEGORY_ORDER[b.category]),
+    }));
+}
+
+/** Returns cooked PlanEntry rows for a household, grouped by Monday-start week
+ *  (most recent week first) and then by day within the week (most recent day
+ *  first, soup before main within a day). */
 export async function listCookedHistory(householdId: string) {
   const entries = (
     await prisma.planEntry.findMany({
@@ -242,5 +263,8 @@ export async function listCookedHistory(householdId: string) {
 
   return [...weekMap.entries()]
     .sort((a, b) => b[0].localeCompare(a[0]))
-    .map(([weekStartKey, weekEntries]) => ({ weekStartKey, entries: weekEntries }));
+    .map(([weekStartKey, weekEntries]) => ({
+      weekStartKey,
+      days: groupByDay(weekEntries),
+    }));
 }
