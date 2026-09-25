@@ -8,14 +8,16 @@ datasource db {
 }
 
 model Household {
-  id          String      @id @default(cuid())
-  name        String
-  inviteCode  String      @unique
-  createdAt   DateTime    @default(now())
-  users       User[]
-  meals       Meal[]
-  tags        Tag[]
-  planEntries PlanEntry[]
+  id             String      @id @default(cuid())
+  name           String
+  inviteCode     String      @unique
+  activeWeekdays Int[]       @default([0, 1, 2, 3, 4, 5, 6])
+  createdAt      DateTime    @default(now())
+  users          User[]
+  meals          Meal[]
+  tags           Tag[]
+  planEntries    PlanEntry[]
+  dayOverrides   PlanDayOverride[]
 }
 
 model User {
@@ -69,17 +71,18 @@ model VerificationToken {
 }
 
 model Meal {
-  id          String       @id @default(cuid())
-  householdId String
-  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  name        String
-  note        String?
-  category    MealCategory @default(main)
-  createdById String?
-  createdBy   User?        @relation("MealCreatedBy", fields: [createdById], references: [id])
-  tags        MealTag[]
-  planEntries PlanEntry[]
-  createdAt   DateTime     @default(now())
+  id           String       @id @default(cuid())
+  householdId  String
+  household    Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name         String
+  note         String?
+  category     MealCategory @default(main)
+  durationDays Int          @default(1)
+  createdById  String?
+  createdBy    User?        @relation("MealCreatedBy", fields: [createdById], references: [id])
+  tags         MealTag[]
+  planEntries  PlanEntry[]
+  createdAt    DateTime     @default(now())
 }
 
 model Tag {
@@ -123,4 +126,14 @@ model PlanEntry {
   status      PlanEntryStatus @default(planned)
 
   @@unique([householdId, date, category])
+}
+
+model PlanDayOverride {
+  id          String    @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  date        DateTime  @db.Date
+  active      Boolean
+
+  @@unique([householdId, date])
 }

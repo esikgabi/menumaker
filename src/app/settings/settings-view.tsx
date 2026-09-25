@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   renameHouseholdAction,
   leaveHouseholdAction,
   createTagAction,
   renameTagAction,
   deleteTagAction,
+  updateActiveWeekdaysAction,
 } from './actions';
 
 type Member = { id: string; name: string | null; email: string };
@@ -25,18 +27,31 @@ export function SettingsView({
   currentUserId,
   members,
   tags,
+  activeWeekdays,
 }: {
   householdName: string;
   inviteCode: string;
   currentUserId: string;
   members: Member[];
   tags: Tag[];
+  activeWeekdays: number[];
 }) {
   const t = useTranslations('Settings');
+  const tPlan = useTranslations('Plan');
   const router = useRouter();
   const [tagList, setTagList] = useState(tags);
   const [newTagName, setNewTagName] = useState('');
   const [copied, setCopied] = useState(false);
+  const [weekdays, setWeekdays] = useState(activeWeekdays);
+
+  const WEEKDAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+
+  async function toggleWeekday(day: number) {
+    const next = weekdays.includes(day) ? weekdays.filter((d) => d !== day) : [...weekdays, day].sort();
+    if (next.length === 0) return;
+    setWeekdays(next);
+    await updateActiveWeekdaysAction(next);
+  }
 
   const inviteLink =
     typeof window !== 'undefined' ? `${window.location.origin}/onboarding?code=${inviteCode}` : '';
@@ -152,6 +167,27 @@ export function SettingsView({
             <Button type="button" variant="secondary" onClick={handleAddTag}>
               {t('addTag')}
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t('activeDaysTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
+          <p className="text-sm text-muted-foreground">{t('activeDaysHint')}</p>
+          <div className="flex flex-wrap gap-2">
+            {WEEKDAY_KEYS.map((key, day) => (
+              <Badge
+                key={key}
+                variant={weekdays.includes(day) ? 'default' : 'outline'}
+                className="cursor-pointer"
+                onClick={() => toggleWeekday(day)}
+              >
+                {tPlan(key)}
+              </Badge>
+            ))}
           </div>
         </CardContent>
       </Card>

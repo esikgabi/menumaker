@@ -57,6 +57,13 @@ test('sign in, create household, add a meal, generate a week, and see it transit
   await expect(page.getByText('E2E Main Meal').first()).toBeVisible();
   await expect(page.getByText('E2E Soup Meal').first()).toBeVisible();
 
+  // Skip one day and confirm it collapses to the day-off state instead of
+  // showing meal selects.
+  await page.getByRole('button', { name: 'Skip this day' }).first().click();
+  await expect(page.getByText('No menu (day off)')).toBeVisible();
+  await page.getByRole('button', { name: 'Add menu back' }).click();
+  await expect(page.getByText('No menu (day off)')).not.toBeVisible();
+
   // Simulate time passing: backdate today's main-slot plan entry directly via
   // Prisma, since the app has no time-travel UI and this test can't wait real
   // days. Scoped to category: 'main' since each day now has two rows

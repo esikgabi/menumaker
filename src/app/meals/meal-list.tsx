@@ -10,7 +10,7 @@ import { deleteMealAction } from './actions';
 import { MealForm } from './meal-form';
 
 type Tag = { id: string; name: string };
-type Meal = { id: string; name: string; note: string | null; category: 'soup' | 'main'; tags: Tag[] };
+type Meal = { id: string; name: string; note: string | null; category: 'soup' | 'main'; durationDays: number; tags: Tag[] };
 
 function ChipFilter({
   label,

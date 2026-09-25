@@ -178,6 +178,38 @@ describe('meal CRUD and household isolation', () => {
     const both = await listMeals(household.id, undefined, ['main', 'soup']);
     expect(both).toHaveLength(2);
   });
+
+  it('defaults durationDays to 1 when not provided', async () => {
+    const household = await makeHousehold('S');
+    const owner = (await prisma.user.findFirst({ where: { householdId: household.id } }))!;
+
+    const meal = await createMeal(household.id, owner.id, { name: 'Default Duration', note: '', tagIds: [], category: 'main' } as never);
+
+    expect(meal.durationDays).toBe(1);
+  });
+
+  it('persists an explicit durationDays and allows updating it', async () => {
+    const household = await makeHousehold('T');
+    const owner = (await prisma.user.findFirst({ where: { householdId: household.id } }))!;
+    const meal = await createMeal(household.id, owner.id, {
+      name: 'Multi-day Stew',
+      note: '',
+      tagIds: [],
+      category: 'main',
+      durationDays: 3,
+    });
+    expect(meal.durationDays).toBe(3);
+
+    const updated = await updateMeal(household.id, meal.id, {
+      name: 'Multi-day Stew',
+      note: '',
+      tagIds: [],
+      category: 'main',
+      durationDays: 2,
+    });
+
+    expect(updated?.durationDays).toBe(2);
+  });
 });
 
 describe('renameTag and deleteTag', () => {

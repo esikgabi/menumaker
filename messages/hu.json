@@ -38,7 +38,8 @@
     "noMeals": "Még nincs étel. Adj hozzá egyet a kezdéshez.",
     "categoryLabel": "Kategória",
     "categorySoup": "Leves",
-    "categoryMain": "Főétel"
+    "categoryMain": "Főétel",
+    "durationLabel": "Hány napig tart"
   },
   "Plan": {
     "title": "Heti menü",
@@ -53,6 +54,9 @@
     "noneOption": "Nincs",
     "statusCooked": "Elkészült",
     "statusSkipped": "Kihagyva",
+    "dayOff": "Nincs menü (szabadnap)",
+    "skipDay": "Nap kihagyása",
+    "restoreDay": "Menü visszaállítása",
     "monday": "Hétfő",
     "tuesday": "Kedd",
     "wednesday": "Szerda",
@@ -76,6 +80,8 @@
     "copied": "Másolva!",
     "membersTitle": "Tagok",
     "tagsTitle": "Címkék",
+    "activeDaysTitle": "Aktív napok",
+    "activeDaysHint": "Válaszd ki, mely napokon van általában szükség menüre. Egy adott napot a Heti menü oldalon is be- vagy kikapcsolhatsz, csak az adott hétre.",
     "newTagPlaceholder": "Új címke neve",
     "addTag": "Címke hozzáadása",
     "rename": "Átnevezés",
