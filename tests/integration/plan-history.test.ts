@@ -30,7 +30,7 @@ async function makeHousehold(suffix: string) {
 }
 
 describe('listCookedHistory', () => {
-  it('returns only cooked entries, grouped by week, most recent week first', async () => {
+  it('returns only cooked entries, grouped by week then day, most recent week first', async () => {
     const { household, owner } = await makeHousehold('A');
     const meal = await createMeal(household.id, owner.id, { name: 'Cooked Meal', note: '', tagIds: [], category: 'main' });
 
@@ -50,10 +50,12 @@ describe('listCookedHistory', () => {
 
     expect(weeks).toHaveLength(2);
     expect(weeks[0].weekStartKey).toBe(thisWeek[0]); // most recent week first
-    expect(weeks[0].entries).toHaveLength(1);
-    expect(weeks[0].entries[0].meal?.name).toBe('Cooked Meal');
+    expect(weeks[0].days).toHaveLength(1);
+    expect(weeks[0].days[0].dateKey).toBe(thisWeek[0]);
+    expect(weeks[0].days[0].entries).toHaveLength(1);
+    expect(weeks[0].days[0].entries[0].meal?.name).toBe('Cooked Meal');
     expect(weeks[1].weekStartKey).toBe(lastWeek[0]);
-    expect(weeks[1].entries).toHaveLength(1);
+    expect(weeks[1].days).toHaveLength(1);
   });
 
   it('does not return another household’s history', async () => {
@@ -70,7 +72,7 @@ describe('listCookedHistory', () => {
     expect(weeks).toHaveLength(0);
   });
 
-  it('returns main and soup entries for the same day as independent rows with their own category', async () => {
+  it('groups same-day main and soup entries into one day, soup before main', async () => {
     const { household, owner } = await makeHousehold('D');
     const mainMeal = await createMeal(household.id, owner.id, { name: 'Main Dish', note: '', tagIds: [], category: 'main' });
     const soupMeal = await createMeal(household.id, owner.id, { name: 'Soup Dish', note: '', tagIds: [], category: 'soup' });
@@ -85,9 +87,29 @@ describe('listCookedHistory', () => {
 
     const weeks = await listCookedHistory(household.id);
 
-    expect(weeks[0].entries).toHaveLength(2);
-    const categories = weeks[0].entries.map((e: (typeof weeks)[number]['entries'][number]) => e.category).sort();
-    expect(categories).toEqual(['main', 'soup']);
+    expect(weeks[0].days).toHaveLength(1); // same day -> one day group
+    expect(weeks[0].days[0].dateKey).toBe(thisWeek[0]);
+    const categories = weeks[0].days[0].entries.map((e: (typeof weeks)[number]['days'][number]['entries'][number]) => e.category);
+    expect(categories).toEqual(['soup', 'main']); // soup before main
+  });
+
+  it('orders multiple days within a week most-recent-day-first', async () => {
+    const { household, owner } = await makeHousehold('F');
+    const meal = await createMeal(household.id, owner.id, { name: 'Repeatable Meal', note: '', tagIds: [], category: 'main' });
+    const thisWeek = getWeekDateKeys(new Date());
+
+    await prisma.planEntry.createMany({
+      data: [
+        { householdId: household.id, date: new Date(thisWeek[0]), category: 'main', mealId: meal.id, status: 'cooked' },
+        { householdId: household.id, date: new Date(thisWeek[1]), category: 'main', mealId: meal.id, status: 'cooked' },
+      ],
+    });
+
+    const weeks = await listCookedHistory(household.id);
+
+    expect(weeks[0].days).toHaveLength(2);
+    expect(weeks[0].days[0].dateKey).toBe(thisWeek[1]); // more recent day first
+    expect(weeks[0].days[1].dateKey).toBe(thisWeek[0]);
   });
 
   it('excludes cooked entries whose meal was deleted', async () => {
